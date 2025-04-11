@@ -24,6 +24,7 @@ import ffmpeg from "fluent-ffmpeg";
 
 dotenv.config();
 
+// S3 client configuration
 const s3Client = new S3Client({
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -32,9 +33,11 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION || "ap-south-1",
 });
 
+
+// Resolutions for transcoding TODO: Add more resolutions like 4K, 8K, 240p etc.
 const RESOLUTIONS = [
-  { name: "360p", width: 640, height: 360 }, // Fixed aspect ratio
-  { name: "480p", width: 854, height: 480 }, // Fixed aspect ratio
+  { name: "360p", width: 640, height: 360 }, 
+  { name: "480p", width: 854, height: 480 },
   { name: "720p", width: 1280, height: 720 },
   { name: "1080p", width: 1920, height: 1080 },
 ];
@@ -54,6 +57,7 @@ const init = async () => {
   const videoKey = process.env.KEY;
   const videoId = process.env.VIDEO_ID;
 
+  // Validate the output bucket name
   let originalFilePath;
 
   try {
@@ -75,9 +79,12 @@ const init = async () => {
 
     // Step 2: Transcode the video into multiple resolutions
     console.log("Starting transcoding...");
+
     const promises = RESOLUTIONS.map((resolution) => {
       const outputPath = path.resolve(`/tmp/video-${resolution.name}.mp4`);
-      const outputKey = `videos/${videoId}/${resolution.name}.mp4`; // Save in videos/<videoId>/<resolution>.mp4
+      
+      // Save in videos/<videoId>/<resolution>.mp4
+      const outputKey = `videos/${videoId}/${resolution.name}.mp4`;
 
       return new Promise((resolve, reject) => {
         ffmpeg(originalFilePath)
@@ -96,7 +103,7 @@ const init = async () => {
           })
           .on("end", async () => {
             try {
-              // Step 3: Upload the transcoded video to S3
+              // Step 3: Save the transcoded video to S3 simultaneously
               console.log(
                 `Uploading ${resolution.name} to s3://${outputBucket}/${outputKey}...`
               );
@@ -112,7 +119,7 @@ const init = async () => {
                 `Uploaded ${resolution.name} to s3://${outputBucket}/${outputKey}`
               );
 
-              // Clean up temporary file
+              // Remove the temporary transcoded file
               await fs.unlink(outputPath);
               console.log(`Cleaned up temporary file: ${outputPath}`);
 
@@ -136,7 +143,7 @@ const init = async () => {
     const outputKeys = await Promise.all(promises);
     console.log("Transcoding complete. Output keys:", outputKeys);
 
-    // Clean up the original file
+    // Remove the original file after transcoding
     await fs.unlink(originalFilePath);
     console.log(`Cleaned up original file: ${originalFilePath}`);
   } catch (error) {
@@ -144,6 +151,8 @@ const init = async () => {
     // Clean up if the original file exists
     if (originalFilePath) {
       try {
+
+        // Attempt to remove the original file if it exists
         await fs.unlink(originalFilePath);
         console.log(`Cleaned up original file on error: ${originalFilePath}`);
       } catch (cleanupError) {

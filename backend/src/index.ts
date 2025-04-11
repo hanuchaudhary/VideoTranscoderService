@@ -48,15 +48,16 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
-// AWS Clients
+// SQS Queue client
 const sqsClient = new SQSClient({
-  credentials: {
+  credentials: {  
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
   region: process.env.AWS_REGION!,
 });
 
+// ECS client
 const ecsClient = new ECSClient({
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
@@ -65,6 +66,7 @@ const ecsClient = new ECSClient({
   region: process.env.AWS_REGION!,
 });
 
+// S3 client
 const s3Client = new S3Client({
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
@@ -85,7 +87,7 @@ app.post("/preSignedUrl", async (req: Request, res: Response) => {
     }
 
     const command = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME,
+      Bucket: process.env.S3_BUCKET_NAME, // Temporary bucket for uploads
       Key: `videos/${videoId}/${fileName}`,
       ContentType: fileType,
     });
@@ -154,6 +156,8 @@ const init = async () => {
       WaitTimeSeconds: 20,
     });
 
+    // Poll the SQS queue for messages
+    console.log("Polling SQS queue for messages...");
     while (true) {
       const { Messages } = await sqsClient.send(command);
 
@@ -201,6 +205,7 @@ const init = async () => {
             }
             const videoId = videoIdMatch[1];
 
+            // Trigger ECS task for transcoding
             try {
               const runTaskCommand = new RunTaskCommand({
                 taskDefinition: process.env.TASK_DEFINITION_ARN,
