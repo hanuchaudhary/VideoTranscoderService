@@ -86,6 +86,14 @@ const init = async () => {
           .audioCodec("aac")
           .size(`${resolution.width}x${resolution.height}`)
           .format("mp4")
+          .on("start", async () => {
+            console.log("Transcoding Started for", resolution.name);
+          })
+          .on("progress", (progress) => {
+            console.log(
+              `Transcoding ${resolution.name}: ${progress.percent}% complete`
+            );
+          })
           .on("end", async () => {
             try {
               // Step 3: Upload the transcoded video to S3
