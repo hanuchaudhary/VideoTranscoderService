@@ -1,17 +1,15 @@
 /**
- * This function performs the following steps:
- * 1. Downloads the videos from S3.
- * 2. Starts the transcoding process using FFmpeg.
- * 3. Uploads the transcoded videos back to S3.
+ * This script runs in an ECS task to transcode a video into multiple resolutions.
+ * It performs the following steps:
+ * 1. Downloads the video from S3 using the provided bucket and key.
+ * 2. Transcodes the video into multiple resolutions using FFmpeg.
+ * 3. Uploads the transcoded videos back to S3 in the videos/<videoId>/<resolution>.mp4 structure.
  *
- * @param {string} inputBucket - The name of the S3 bucket containing the input videos.
- * @param {string} outputBucket - The name of the S3 bucket where the transcoded videos will be uploaded.
- * @param {string} videoKey - The key of the video file in the input S3 bucket.
- * @param {Object} options - Additional options for the transcoding process.
- * @param {string} options.format - The desired output video format (e.g., mp4, mkv).
- * @param {number} options.resolution - The desired resolution for the output video.
- * @returns {Promise<string>} - A promise that resolves to the key of the uploaded transcoded video in the output S3 bucket.
- * @throws {Error} - Throws an error if any step in the process fails.
+ * Environment Variables:
+ * - BUCKET_NAME: The S3 bucket containing the input video.
+ * - KEY: The S3 key of the input video (e.g., videos/<videoId>/<videoId>.mp4).
+ * - VIDEO_ID: The unique video ID passed from the backend.
+ * - TRANSCODED_VIDEOS_BUCKET_NAME: The S3 bucket for transcoded videos (optional, defaults to BUCKET_NAME).
  */
 
 import {
@@ -21,77 +19,130 @@ import {
 } from "@aws-sdk/client-s3";
 import fs from "fs/promises";
 import path from "node:path";
-import dotnev from "dotenv";
+import dotenv from "dotenv";
 import ffmpeg from "fluent-ffmpeg";
-import readFS from "fs"
 
-dotnev.config();
+dotenv.config();
 
 const s3Client = new S3Client({
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey:
-      process.env.AWS_SECRET_ACCESS_KEY,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
   },
   region: process.env.AWS_REGION || "ap-south-1",
 });
 
 const RESOLUTIONS = [
-  { name: "360p", height: 480, width: 360 },
-  { name: "480p", height: 860, width: 480 },
-  { name: "720p", height: 1280, width: 720 },
-  { name: "1080p", height: 1920, width: 1080 },
+  { name: "360p", width: 640, height: 360 }, // Fixed aspect ratio
+  { name: "480p", width: 854, height: 480 }, // Fixed aspect ratio
+  { name: "720p", width: 1280, height: 720 },
+  { name: "1080p", width: 1920, height: 1080 },
 ];
 
 const init = async () => {
+  // Validate environment variables
+  const requiredEnvVars = ["BUCKET_NAME", "KEY", "VIDEO_ID"];
+  for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+      console.error(`Missing environment variable: ${envVar}`);
+      process.exit(1);
+    }
+  }
+
+  const inputBucket = process.env.BUCKET_NAME;
+  const outputBucket = process.env.TRANSCODED_VIDEOS_BUCKET_NAME;
+  const videoKey = process.env.KEY;
+  const videoId = process.env.VIDEO_ID;
+
+  let originalFilePath;
+
   try {
+    // Step 1: Download the video from S3
+    console.log(`Downloading video from s3://${inputBucket}/${videoKey}...`);
     const command = new GetObjectCommand({
-      Bucket: process.env.BUCKET_NAME,
-      Key: process.env.KEY,
+      Bucket: inputBucket,
+      Key: videoKey,
     });
 
-    console.log("Getting video files...");
     const response = await s3Client.send(command);
-    console.log(`Recieved Video file: ${response.Body}`);
+    if (!response.Body) {
+      throw new Error("Failed to download video: Empty response body");
+    }
 
-    const originalFilePath = `orginalVideo.mp4`;
+    originalFilePath = path.resolve("/tmp/originalVideo.mp4");
     await fs.writeFile(originalFilePath, response.Body);
+    console.log(`Downloaded video to ${originalFilePath}`);
 
-    const originalVideoPath = path.resolve(originalFilePath);
-
-    console.log("Transcoding...");
+    // Step 2: Transcode the video into multiple resolutions
+    console.log("Starting transcoding...");
     const promises = RESOLUTIONS.map((resolution) => {
-      const outputPath = `video-${resolution.name}.mp4`;
+      const outputPath = path.resolve(`/tmp/video-${resolution.name}.mp4`);
+      const outputKey = `videos/${videoId}/${resolution.name}.mp4`; // Save in videos/<videoId>/<resolution>.mp4
 
-      return new Promise((resolve) => {
-        ffmpeg(originalVideoPath)
+      return new Promise((resolve, reject) => {
+        ffmpeg(originalFilePath)
           .output(outputPath)
-          .withVideoCodec("libx264")
-          .withAudioCodec("aac")
-          .withSize(`${resolution.width}x${resolution.height}`)
+          .videoCodec("libx264")
+          .audioCodec("aac")
+          .size(`${resolution.width}x${resolution.height}`)
           .format("mp4")
           .on("end", async () => {
-            console.log(`Transcoded ${outputPath}`);
-            const command = new PutObjectCommand({
-              Bucket: process.env.TRANSCODED_VIDEOS_BUCKET_NAME || "final-transcoded-video-bucket",
-              Key: outputPath,
-              Body : readFS.createReadStream(path.resolve(outputPath))
-            });
-            
-            console.log(`${outputPath} Uploading...`);
-            await s3Client.send(command);
-            console.log(`${outputPath} Uploaded`);
-            console.log(`Saved to final S3 ${outputPath}`);
+            try {
+              // Step 3: Upload the transcoded video to S3
+              console.log(
+                `Uploading ${resolution.name} to s3://${outputBucket}/${outputKey}...`
+              );
+              const uploadCommand = new PutObjectCommand({
+                Bucket: outputBucket,
+                Key: outputKey,
+                Body: await fs.readFile(outputPath),
+                ContentType: "video/mp4",
+              });
 
-            resolve(outputPath);
+              await s3Client.send(uploadCommand);
+              console.log(
+                `Uploaded ${resolution.name} to s3://${outputBucket}/${outputKey}`
+              );
+
+              // Clean up temporary file
+              await fs.unlink(outputPath);
+              console.log(`Cleaned up temporary file: ${outputPath}`);
+
+              resolve(outputKey);
+            } catch (uploadError) {
+              console.error(
+                `Failed to upload ${resolution.name}:`,
+                uploadError
+              );
+              reject(uploadError);
+            }
+          })
+          .on("error", (err) => {
+            console.error(`Transcoding failed for ${resolution.name}:`, err);
+            reject(err);
           })
           .run();
       });
     });
 
-    await Promise.all(promises);
+    const outputKeys = await Promise.all(promises);
+    console.log("Transcoding complete. Output keys:", outputKeys);
+
+    // Clean up the original file
+    await fs.unlink(originalFilePath);
+    console.log(`Cleaned up original file: ${originalFilePath}`);
   } catch (error) {
-    console.log("Error:", error);
+    console.error("Error in transcoding process:", error);
+    // Clean up if the original file exists
+    if (originalFilePath) {
+      try {
+        await fs.unlink(originalFilePath);
+        console.log(`Cleaned up original file on error: ${originalFilePath}`);
+      } catch (cleanupError) {
+        console.error("Failed to clean up original file:", cleanupError);
+      }
+    }
+    process.exit(1); // Exit with failure to signal ECS task failure
   }
 };
 
