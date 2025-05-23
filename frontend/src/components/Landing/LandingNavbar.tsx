@@ -10,7 +10,7 @@ export default function LandingNavbar() {
         <div className="flex items-center">
           <Link className="flex items-center justify-center gap-1.5" href={"/"}>
             <Logo />
-            <span className="md:text-xl text-lg font-semibold">Lumora.</span>
+            <span className="md:text-xl text-lg font-semibold">Voxer.</span>
           </Link>
         </div>
         <div className="flex gap-2">

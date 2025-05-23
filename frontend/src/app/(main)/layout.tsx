@@ -2,8 +2,8 @@ import { DashboardNavbar } from "@/components/Dashboard/DashboardNavbar";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Lumora. | Dashboard",
-  description: "Dashboard for Lumora.",
+  title: "Voxer. | Dashboard",
+  description: "Dashboard for Voxer.",
 };
 
 export default function DashboardLayout({

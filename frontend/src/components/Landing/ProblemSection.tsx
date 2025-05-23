@@ -1,51 +1,44 @@
-import React from "react";
-import Pill from "../Pill";
+import Pill from "../Pill"
 
 export function ProblemSection() {
   return (
-    <section className="h-[calc(100vh-10rem) border-b">
+    <section className="border-b">
       <div className="md:py-20 py-14 col-span-1 px-5 border-b">
-        <h2 className="text-2xl md:text-3xl font-bold text-center">
-          Struggling to Create Viral Content?
-        </h2>
+        <h2 className="text-2xl md:text-3xl font-bold text-center">Struggling with Video Transcoding Challenges?</h2>
       </div>
-      <div className="">
-        <div className="md:p-8 p-4 border-b text-left">
+      <div className="border-b md:text-left text-center md:flex">
+        <div className="group flex-shrink-0 flex items-center justify-center">
+          <div className="flex items-center justify-center h-full p-4">
+            <button className="dark:text-blue-400 px-4 py-2 rounded-3xl font-semibold leading-none text-blue-800 bg-blue-500/30 ">
+              Content creators
+            </button>
+          </div>
+        </div>
+        <p className="border-l md:p-8 p-4 text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1">
+          Slow transcoding and format issues slowing down your YouTube or social media uploads? Our service delivers
+          lightning-fast conversions to 144p–4K with perfect file sizes.
+        </p>
+      </div>
+      <div className="flex items-center justify-between">
+        <div className="md:p-8 p-4 text-left border-r">
           <p className="text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1">
-            <Pill
-              classname="dark:text-blue-400 text-blue-800 bg-blue-500/30"
-              text="Content Creators"
-            />{" "}
-            Optimize your videos for YouTube, Vimeo, or social media with
-            perfect resolution and file size.
+            <span className="dark:text-white text-black">
+              <Pill classname="dark:text-purple-400 text-purple-800 bg-purple-500/30" text="Businesses" />{" "}
+            </span>
+            Need high-quality videos across devices without the hassle? Transcode effortlessly to any format, ensuring
+            professional-grade delivery for your audience.
           </p>
         </div>
-        <div className="flex items-center justify-between">
-          <div className="md:p-8 p-4 text-left border-r">
-            <p className="text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1">
-              <span className="dark:text-white text-black">
-                <Pill
-                  classname="dark:text-purple-400 text-purple-800 bg-purple-500/30"
-                  text="Businesses"
-                />{" "}
-              </span>
-              Deliver professional-grade videos to your audience across devices.
-            </p>
-          </div>
-          <div className="md:p-8 p-4 text-left">
-            <p className="text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1">
-              <span className="dark:text-white text-black">
-                <Pill
-                  classname="dark:text-green-400 text-green-800 bg-green-500/30"
-                  text="Developers"
-                />{" "}
-              </span>
-              Automate video workflows with our robust API and scalable
-              infrastructure.
-            </p>
-          </div>
+        <div className="md:p-8 p-4 text-left">
+          <p className="text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1">
+            <span className="dark:text-white text-black">
+              <Pill classname="dark:text-green-400 text-green-800 bg-green-500/30" text="Developers" />{" "}
+            </span>
+            Tired of complex video workflows? Automate transcoding with our robust API and scalable cloud
+            infrastructure, from 144p to 4K.
+          </p>
         </div>
       </div>
     </section>
-  );
+  )
 }

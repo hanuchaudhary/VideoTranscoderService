@@ -189,7 +189,7 @@ export function DashboardPage() {
           Ready to create Shorts in seconds?
         </h1>
         <p className="text-sm text-muted-foreground">
-          Upload your video or paste a YouTube link and let Lumora do the rest.
+          Upload your video or paste a YouTube link and let Voxer do the rest.
         </p>
       </div>
 

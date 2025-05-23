@@ -2,6 +2,43 @@ import { Facebook, Instagram, Twitter, Youtube } from "lucide-react";
 import React from "react";
 import { ThemeSwitcher } from "../ThemeToggle";
 
+const socialLinks = [
+  { href: "https://facebook.com/videotranscode", icon: Facebook },
+  { href: "https://twitter.com/videotranscode", icon: Twitter },
+  { href: "https://instagram.com/videotranscode", icon: Instagram },
+  { href: "https://youtube.com/@videotranscode", icon: Youtube },
+];
+
+const footerSections = [
+  {
+    title: "Company",
+    links: [
+      { href: "/about", label: "About Us" },
+      { href: "/careers", label: "Careers" },
+      { href: "/blog", label: "Blog" },
+      { href: "/contact", label: "Contact" },
+    ],
+  },
+  {
+    title: "Features",
+    links: [
+      { href: "/features#multi-format", label: "Multi-Format Transcoding" },
+      { href: "/features#api", label: "API Integration" },
+      { href: "/features#real-time", label: "Real-Time Status" },
+      { href: "/features#4k", label: "144p–4K Support" },
+    ],
+  },
+  {
+    title: "Support",
+    links: [
+      { href: "/support", label: "Help Center" },
+      { href: "/contact", label: "Contact Support" },
+      { href: "/privacy", label: "Privacy Policy" },
+      { href: "/terms", label: "Terms of Service" },
+    ],
+  },
+];
+
 export function Footer() {
   return (
     <footer className="py-12 mt-10 max-w-5xl mx-auto">
@@ -9,112 +46,50 @@ export function Footer() {
         <div className="grid md:grid-cols-4 gap-8">
           <div>
             <div className="flex items-center mb-4">
-              <span className="text-xl font-semibold">Lumora </span>
+              <span className="text-xl font-semibold">Voxer</span>
             </div>
             <p className="mb-4">
-              AI-powered video editing that turns your content into viral reels.
+              Lightning-fast video transcoding from 144p to 4K for creators,
+              businesses, and developers.
             </p>
             <div className="flex space-x-4 text-muted-foreground">
-              <a href="#" className="hover:text-white transition">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="hover:text-white transition">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="#" className="hover:text-white transition">
-                <Instagram className="w-5 h-5" />
-              </a>
-              <a href="#" className="hover:text-white transition">
-                <Youtube className="w-5 h-5" />
-              </a>
+              {socialLinks.map(({ href, icon: Icon }, index) => (
+                <a
+                  key={index}
+                  href={href}
+                  className="hover:text-primary transition"
+                >
+                  <Icon className="w-5 h-5" />
+                </a>
+              ))}
             </div>
           </div>
 
-          <div className="">
-            <h3 className="text-white font-bold mb-4">Company</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  About
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Careers
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Blog
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Press
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-white font-bold mb-4">Features</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  AI Editing
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Auto Captions
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Social Uploads
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Analytics
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-white font-bold mb-4">Support</h3>
-            <ul className="space-y-2">
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Help Center
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Contact Us
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#" className="hover:text-white transition">
-                  Terms of Service
-                </a>
-              </li>
-            </ul>
-          </div>
+          {footerSections.map((section, index) => (
+            <div key={index}>
+              <h3 className="text-primary font-bold mb-4">{section.title}</h3>
+              <ul className="space-y-2">
+                {section.links.map((link, linkIndex) => (
+                  <li key={linkIndex}>
+                    <a
+                      href={link.href}
+                      className="hover:text-primary transition"
+                    >
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
         <div className="inline-block mt-4">
           <ThemeSwitcher />
         </div>
 
-        <div className="border-t border-neutral-800 mt-12 pt-8 text-center">
-          <p>© {new Date().getFullYear()} Lumora . All rights reserved.</p>
+        <div className="border-t mt-12 pt-8 text-center text-sm text-muted-foreground">
+          <p>© {new Date().getFullYear()} . All rights reserved.</p>
         </div>
       </div>
     </footer>

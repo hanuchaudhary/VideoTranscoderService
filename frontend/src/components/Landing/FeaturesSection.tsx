@@ -16,7 +16,8 @@ export function FeaturesSection() {
       <div className="w-full border-b">
         <div className="md:py-24 py-14 px-4 max-w-xl mx-auto">
           <h2 className="text-xl md:text-3xl font-bold text-center mb-4">
-            Everything You Need for Seamless Video Transcoding
+            Everything You Need for Seamless{" "}
+            <span className="text-muted-foreground">Video Transcoding</span>
           </h2>
         </div>
       </div>
@@ -31,9 +32,11 @@ export function FeaturesSection() {
               Convert videos to 144p, 240p, 360p, 480p, 720p, 1080p, 2K, and 4K
               resolutions.
             </p>
-            <MultipleUploadDiagram />
+            <div className="md:mt-0 mt-7">
+              <MultipleUploadDiagram />
+            </div>
           </div>
-          <div className="h-full md:p-10 flex flex-col justify-between">
+          <div className="h-full md:p-10 p-6 flex flex-col justify-between">
             <div>
               <p className="flex items-center gap-2 text-muted-foreground">
                 <IconCpu className="w-5 h-5" />
@@ -44,7 +47,7 @@ export function FeaturesSection() {
                 pipeline.
               </p>
             </div>
-            <div className="md:pb-6">
+            <div className="md:p-6">
               <CpuArchitecture />
             </div>
           </div>
@@ -69,13 +72,13 @@ export function FeaturesSection() {
             </p>
             <div className="pb-6 pt-14 w-full flex flex-col items-center justify-center">
               <div className="flex items-center justify-center w-20 h-20 rounded-full bg-secondary/30 text-primary">
-                <IconPlayerPlayFilled className="h-10 w-10 animate-in" />
+              <IconPlayerPlayFilled className="h-10 w-10 animate-in" />
               </div>
               <ShinyText
-                text='"Transform your moments into viral sensations in just seconds!"'
-                disabled={false}
-                speed={3}
-                className="italic text-sm text-muted-foreground mt-4"
+              text='"Effortlessly transcode your videos with unmatched speed and quality!"'
+              disabled={false}
+              speed={3}
+              className="italic text-sm text-muted-foreground mt-4"
               />
             </div>
           </div>
