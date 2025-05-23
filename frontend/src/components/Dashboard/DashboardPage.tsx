@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { BACKEND_URL } from "../../../config";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -135,7 +134,7 @@ export function DashboardPage() {
     try {
       if (data.uploadMethod === "url" && data.url) {
         // Handle URL submission
-        const response = await axios.post(`${BACKEND_URL}`, {
+        const response = await axios.post(`${"BACKEND_URL"}`, {
           url: data.url,
           videoType: data.videoType,
         });
@@ -151,7 +150,7 @@ export function DashboardPage() {
         formData.append("file", videoFile);
         formData.append("videoType", data.videoType);
 
-        const response = await axios.post(`${BACKEND_URL}/upload`, formData, {
+        const response = await axios.post(`${"BACKEND_URL"}/upload`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },

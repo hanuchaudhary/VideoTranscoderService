@@ -14,44 +14,54 @@ export function FaqSection() {
 
   const items = [
     {
-      question: "What video formats can I upload?",
+      question: "What video formats does your service support?",
       answer:
-        "We support all major video formats including MP4, MOV, AVI, and WMV. You can also paste YouTube links directly.",
+        "We support a wide range of formats, including MP4, AVI, MOV, MKV, WMV, and more. You can transcode to popular codecs like H.264, H.265, and VP9 for compatibility across platforms.",
     },
     {
-      question: "How long does the AI editing process take?",
+      question: "How long does it take to transcode a video?",
       answer:
-        "Most videos are processed within 5-15 minutes, depending on length and complexity. Pro users get priority processing for faster results.",
+        "Transcoding times vary based on file size and resolution, but our cloud-based infrastructure ensures most videos are processed in minutes. For example, a 10-minute 1080p video typically takes under 2 minutes.",
     },
     {
-      question: "Can I upload directly to social media?",
+      question: "Is my video data secure during transcoding?",
       answer:
-        "Yes! Our Pro and Business plans allow direct uploading to Instagram Reels, TikTok, and YouTube Shorts after you connect your accounts.",
+        "Yes, we use end-to-end encryption and secure cloud storage to protect your files. Your videos are automatically deleted from our servers after processing, ensuring privacy.",
     },
     {
-      question: "Is my content secure?",
+      question: "Can I transcode videos to multiple resolutions at once?",
       answer:
-        "Absolutely. We use bank-level encryption and secure cloud storage. Your videos are only accessible to you, and we never use your content for any other purposes.",
+        "Absolutely! You can select multiple output resolutions (144p to 4K) in a single job, making it easy to prepare videos for different platforms or devices.",
     },
     {
-      question: "What video formats can I upload?",
+      question: "What happens if I exceed my plan’s transcoding limit?",
       answer:
-        "We support all major video formats including MP4, MOV, AVI, and WMV. You can also paste YouTube links directly.",
+        "For paid plans, you can purchase additional transcoding minutes as needed. Free plan users can upgrade to a paid plan for higher limits. You’ll be notified before reaching your limit.",
     },
     {
-      question: "How long does the AI editing process take?",
+      question: "Can I cancel or change my subscription anytime?",
       answer:
-        "Most videos are processed within 5-15 minutes, depending on length and complexity. Pro users get priority processing for faster results.",
+        "Yes, you can cancel or switch plans at any time through your account dashboard. No long-term commitments are required, and changes take effect immediately.",
     },
     {
-      question: "Can I upload directly to social media?",
+      question: "Do you offer refunds for unused subscriptions?",
       answer:
-        "Yes! Our Pro and Business plans allow direct uploading to Instagram Reels, TikTok, and YouTube Shorts after you connect your accounts.",
+        "We provide a 7-day money-back guarantee for monthly plans and a 14-day guarantee for annual plans. Contact our support team for assistance.",
     },
     {
-      question: "Is my content secure?",
+      question: "Can I integrate your service into my app or website?",
       answer:
-        "Absolutely. We use bank-level encryption and secure cloud storage. Your videos are only accessible to you, and we never use your content for any other purposes.",
+        "Yes, our developer-friendly API allows seamless integration for automated video transcoding. Check our API documentation (#) for details.",
+    },
+    {
+      question: "What kind of support do you offer?",
+      answer:
+        "Free plan users get email support, while paid plans include priority email and 24/7 chat support. Enterprise plans come with dedicated account managers.",
+    },
+    {
+      question: "Do you offer a free trial or plan?",
+      answer:
+        "Yes, our Free Tier lets you transcode up to 10 minutes of video per month at no cost, with access to 720p resolution. Try it today to experience our service!",
     },
   ];
 

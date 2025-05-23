@@ -1,57 +1,89 @@
 import { Check } from "lucide-react";
 import React from "react";
 
+interface Plan {
+  title: string;
+  price: string;
+  description: string;
+  credits: string;
+  features: string[];
+  buttonText: string;
+  buttonVariant: "outline" | "primary";
+}
+
 export function PricingSection() {
-  const plans = [
+  const pricingPlans: Plan[] = [
     {
-      title: "Starter",
-      price: "Free Forever",
-      description:
-        "Great for exploring the platform with limited monthly credits.",
-      credits: "10 credits/month",
+      title: "Free",
+      price: "$0/month",
+      description: "Perfect for hobbyists and testing the service.",
+      credits: "10 minutes/month",
       features: [
-        "Use credits to create up to 3 reels/month",
-        "720p export resolution",
-        "Basic editing tools",
-        "Manual video uploads",
+        "Up to 720p resolution",
+        "Basic codecs (H.264)",
+        "Watermarked outputs",
+        "Email support (48-hour response)",
+        "1 concurrent transcode",
+        "No API access",
+        "No priority processing",
       ],
       buttonText: "Get Started",
       buttonVariant: "outline",
     },
     {
-      title: "Creator",
-      price: "$20/month",
-      description:
-        "Designed for regular creators needing more credits and better tools.",
-      credits: "100 credits/month",
+      title: "Basic",
+      price: "$9.99/month",
+      description: "Ideal for small creators and startups.",
+      credits: "100 minutes/month",
       features: [
-        "Create unlimited reels (based on credit usage)",
-        "1080p HD exports",
-        "Advanced AI-powered editing",
-        "Automatic caption generation",
-        "Direct upload to Instagram & YouTube",
-        "Priority processing",
+        "Up to 1080p resolution",
+        "All codecs (H.264, H.265, VP9)",
+        "No watermarks",
+        "Email support (24-hour response)",
+        "2 concurrent transcodes",
+        "Basic API access (100 API calls/month)",
+        "Standard processing speed",
+        "Add-on: $0.10 per additional minute",
       ],
-      buttonText: "Subscribe Now",
+      buttonText: "Choose Basic",
       buttonVariant: "primary",
     },
     {
-      title: "Agency",
-      price: "Custom Pricing",
-      description:
-        "For teams or agencies with high-volume and advanced needs.",
-      credits: "Custom credits/month",
+      title: "Pro",
+      price: "$29.99/month",
+      description: "Best for professional creators and businesses.",
+      credits: "500 minutes/month",
       features: [
-        "Everything in Creator plan",
-        "4K Ultra HD exports",
-        "API access for automation",
-        "White-label branding support",
-        "Team-based project management",
-        "Dedicated account support",
+        "Up to 4K resolution",
+        "All codecs + advanced settings (e.g., custom bitrate)",
+        "No watermarks",
+        "Priority email + 24/7 chat support",
+        "5 concurrent transcodes",
+        "Full API access (1,000 API calls/month)",
+        "Priority processing for faster results",
+        "Add-on: $0.05 per additional minute",
       ],
-      buttonText: "Contact Sales",
-      buttonVariant: "outline",
+      buttonText: "Choose Pro",
+      buttonVariant: "primary",
     },
+    // {
+    //   title: "Enterprise",
+    //   price: "Custom Pricing",
+    //   description: "Tailored for high-volume users and large organizations.",
+    //   credits: "Unlimited minutes",
+    //   features: [
+    //     "Up to 4K resolution + custom outputs",
+    //     "All codecs + bespoke encoding options",
+    //     "No watermarks",
+    //     "Dedicated account manager + 24/7 priority support",
+    //     "Unlimited concurrent transcodes",
+    //     "Advanced API access (unlimited calls)",
+    //     "Guaranteed SLA (99.9% uptime)",
+    //     "Custom integrations and analytics",
+    //   ],
+    //   buttonText: "Contact Us",
+    //   buttonVariant: "outline",
+    // },
   ];
 
   return (
@@ -70,7 +102,8 @@ export function PricingSection() {
             Flexible Credit-Based Plans
           </h2>
           <p className="text-muted-foreground md:text-lg text-center max-w-2xl mx-auto">
-            Purchase a plan that fits your production volume. Use credits for rendering, AI editing, and more.
+            Purchase a plan that fits your production volume. Use credits for
+            rendering, AI editing, and more.
           </p>
         </div>
         <div className="md:h-20 h-14 grid grid-cols-10 w-full">
@@ -84,11 +117,11 @@ export function PricingSection() {
       </div>
 
       <div className="grid md:grid-cols-3">
-        {plans.map((plan, index) => (
+        {pricingPlans.map((plan, index) => (
           <div
             key={index}
             className={`flex flex-col ${
-              index === plans.length - 1 ? "" : "border-r"
+              index === pricingPlans.length - 1 ? "" : "border-r"
             } py-14 px-6`}
           >
             <div>

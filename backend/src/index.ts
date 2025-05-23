@@ -15,6 +15,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import cors from "cors";
+import redis from "ioredis";
 
 dotenv.config({ path: ".env" });
 
@@ -40,6 +41,7 @@ const requiredEnvVars = [
   "ECS_CLUSTER_ARN",
   "ECS_SUBNETS",
   "ECS_SECURITY_GROUPS",
+  "REDIS_URL",
 ];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
@@ -48,9 +50,24 @@ for (const envVar of requiredEnvVars) {
   }
 }
 
+// Redis client
+const redisClient = new redis(process.env.REDIS_URL!);
+redisClient.subscribe("transcoding", (err) => {
+  if (err) {
+    console.error("Failed to subscribe to Redis channel:", err);
+    return;
+  }
+  console.log("Subscribed to transcoding channel");
+});
+
+redisClient.on("message", (channel, message) => {
+  console.log(`Received message from channel ${channel}:`, message);
+  // Handle the message as needed
+});
+
 // SQS Queue client
 const sqsClient = new SQSClient({
-  credentials: {  
+  credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
   },
@@ -115,10 +132,7 @@ app.get("/videos/:videoId", async (req: Request, res: Response) => {
     });
     const { Contents } = await s3Client.send(listCommand);
 
-    console.log(
-      "conegt" , Contents
-    );
-    
+    console.log("conegt", Contents);
 
     if (!Contents || Contents.length === 0) {
       res.status(404).json({ error: "No videos found for the given videoId" });
@@ -148,7 +162,7 @@ app.get("/videos/:videoId", async (req: Request, res: Response) => {
 });
 
 // SQS Polling
-const init = async () => {
+const pollForMessages = async () => {
   try {
     const command = new ReceiveMessageCommand({
       QueueUrl: process.env.SQS_QUEUE_URL,
@@ -162,17 +176,52 @@ const init = async () => {
       const { Messages } = await sqsClient.send(command);
 
       if (!Messages) {
+        // if no messages then loop again
         console.log("No messages found");
         continue;
       }
 
-      // Process messages in parallel
       await Promise.all(
         Messages.map(async (message) => {
           if (!message.Body) {
             console.warn("Empty message body, skipping");
             return;
           }
+
+          // Example Event
+          // {
+          //   Records: [
+          //     {
+          //       eventVersion: "2.1",
+          //       eventSource: "aws:s3",
+          //       awsRegion: "ap-south-1",
+          //       eventTime: "2025-05-23T17:49:23.037Z",
+          //       eventName: "ObjectCreated:CompleteMultipartUpload",
+          //       userIdentity: { principalId: "A3M50BBDHU5YJN" },
+          //       requestParameters: { sourceIPAddress: "157.49.181.4" },
+          //       responseElements: {
+          //         "x-amz-request-id": "HTWBXX43NDVY4W4N",
+          //         "x-amz-id-2":
+          //           "R1YFnmGrRn/Go2EJngTAvnrHcNkC7Gc+oObNIBMFF/9Cw4Xo5djE3kQdBUcgrrlyJEyDMI3aK9+ap5Yd4sQuWiKKLF3RcK8s",
+          //       },
+          //       s3: {
+          //         s3SchemaVersion: "1.0",
+          //         configurationId: "S3CreateEventToSQS",
+          //         bucket: {
+          //           name: "raw-transcoder-videos",
+          //           ownerIdentity: { principalId: "A3M50BBDHU5YJN" },
+          //           arn: "arn:aws:s3:::raw-transcoder-videos",
+          //         },
+          //         object: {
+          //           key: "ZENITSU.webm",
+          //           size: 50248332,
+          //           eTag: "97b818b70a0d3d2936d9580de65c2e2c-3",
+          //           sequencer: "006830B4C79941E3D6",
+          //         },
+          //       },
+          //     },
+          //   ];
+          // }
 
           const event = JSON.parse(message.Body) as S3Event;
 
@@ -263,7 +312,6 @@ const init = async () => {
                 `Failed to process s3://${bucket.name}/${key}:`,
                 taskError
               );
-              // Skip deletion to allow retry via SQS visibility timeout
             }
           }
         })
@@ -272,13 +320,13 @@ const init = async () => {
   } catch (error) {
     console.error("Error in SQS polling loop:", error);
     await new Promise((resolve) => setTimeout(resolve, 5000));
-    init(); // Retry
+    pollForMessages(); // Retry
   }
 };
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  init();
+  // pollForMessages();
 });

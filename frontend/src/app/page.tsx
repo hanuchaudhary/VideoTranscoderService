@@ -1,5 +1,5 @@
 import { PricingSection } from "@/components/Landing/PricingSection";
-import { FaqSection } from "@/components/Landing/FAQs";
+import { FaqSection } from "@/components/Landing/FAQSection";
 import { HowItWorks } from "@/components/Landing/HowItWorks";
 import { FeaturesSection } from "@/components/Landing/FeaturesSection";
 import { ProblemSection } from "@/components/Landing/ProblemSection";

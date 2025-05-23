@@ -14,10 +14,10 @@ export function ProblemSection() {
           <p className="text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1">
             <Pill
               classname="dark:text-blue-400 text-blue-800 bg-blue-500/30"
-              text="Hours of Editing"
+              text="Content Creators"
             />{" "}
-            Traditional video editing takes hours of your time that could be
-            spent creating.
+            Optimize your videos for YouTube, Vimeo, or social media with
+            perfect resolution and file size.
           </p>
         </div>
         <div className="flex items-center justify-between">
@@ -26,11 +26,10 @@ export function ProblemSection() {
               <span className="dark:text-white text-black">
                 <Pill
                   classname="dark:text-purple-400 text-purple-800 bg-purple-500/30"
-                  text="Complex Software"
+                  text="Businesses"
                 />{" "}
               </span>
-              Professional editing software has a steep learning curve and is
-              hard to master.
+              Deliver professional-grade videos to your audience across devices.
             </p>
           </div>
           <div className="md:p-8 p-4 text-left">
@@ -38,11 +37,11 @@ export function ProblemSection() {
               <span className="dark:text-white text-black">
                 <Pill
                   classname="dark:text-green-400 text-green-800 bg-green-500/30"
-                  text="Manual Upload"
+                  text="Developers"
                 />{" "}
               </span>
-              Converting and uploading to multiple platforms manually is tedious
-              and error-prone.
+              Automate video workflows with our robust API and scalable
+              infrastructure.
             </p>
           </div>
         </div>

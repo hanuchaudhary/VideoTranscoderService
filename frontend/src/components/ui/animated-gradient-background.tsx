@@ -76,7 +76,7 @@ const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProps> = ({
 }) => {
   const { theme } = useTheme();
   gradientColors = gradientColors || [
-    theme === "dark" ? "#0A0A0A" : "#FFFFFF",
+    theme === "dark" ? "#000000" : "#FFFFFF",
     // theme === "dark" ? "#0A0A0A" : "#FFFFFF",
     "#2979FF",
     "#FF80AB",

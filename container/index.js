@@ -1,17 +1,3 @@
-/**
- * This script runs in an ECS task to transcode a video into multiple resolutions.
- * It performs the following steps:
- * 1. Downloads the video from S3 using the provided bucket and key.
- * 2. Transcodes the video into multiple resolutions using FFmpeg.
- * 3. Uploads the transcoded videos back to S3 in the videos/<videoId>/<resolution>.mp4 structure.
- *
- * Environment Variables:
- * - BUCKET_NAME: The S3 bucket containing the input video.
- * - KEY: The S3 key of the input video (e.g., videos/<videoId>/<videoId>.mp4).
- * - VIDEO_ID: The unique video ID passed from the backend.
- * - TRANSCODED_VIDEOS_BUCKET_NAME: The S3 bucket for transcoded videos (optional, defaults to BUCKET_NAME).
- */
-
 import {
   GetObjectCommand,
   S3Client,
@@ -21,10 +7,22 @@ import fs from "fs/promises";
 import path from "node:path";
 import dotenv from "dotenv";
 import ffmpeg from "fluent-ffmpeg";
+import redis from "ioredis";
+
+const redisClient = new redis(process.env.REDIS_URL);
+
+const publishToRedis = async (data) => {
+  const publisher = redisClient.publish("transcoding", JSON.stringify(data));
+  if (publisher) {
+    console.log("Published to Redis:", data);
+  } else {
+    console.error("Failed to publish to Redis");
+  }
+};
 
 dotenv.config();
 
-// S3 client configuration
+// S3Client
 const s3Client = new S3Client({
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -33,18 +31,21 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION || "ap-south-1",
 });
 
-
-// Resolutions for transcoding TODO: Add more resolutions like 4K, 8K, 240p etc.
+// Resolutions for transcoding TODO: Add more resolutions like 4K, 8K, 240p etc. ✅
 const RESOLUTIONS = [
-  { name: "360p", width: 640, height: 360 }, 
+  { name: "144p", width: 256, height: 144 },
+  { name: "240p", width: 426, height: 240 },
+  { name: "360p", width: 640, height: 360 },
   { name: "480p", width: 854, height: 480 },
   { name: "720p", width: 1280, height: 720 },
   { name: "1080p", width: 1920, height: 1080 },
+  { name: "1440p", width: 2560, height: 1440 },
+  { name: "4K", width: 3840, height: 2160 },
 ];
 
 const init = async () => {
   // Validate environment variables
-  const requiredEnvVars = ["BUCKET_NAME", "KEY", "VIDEO_ID"];
+  const requiredEnvVars = ["BUCKET_NAME", "KEY", "VIDEO_ID", "REDIS_URL", "TRANSCODED_VIDEOS_BUCKET_NAME"];
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
       console.error(`Missing environment variable: ${envVar}`);
@@ -63,6 +64,11 @@ const init = async () => {
   try {
     // Step 1: Download the video from S3
     console.log(`Downloading video from s3://${inputBucket}/${videoKey}...`);
+    await publishToRedis({
+      status: "Downloading",
+      message: `Downloading video from s3://${inputBucket}/${videoKey}...`,
+    });
+
     const command = new GetObjectCommand({
       Bucket: inputBucket,
       Key: videoKey,
@@ -73,16 +79,20 @@ const init = async () => {
       throw new Error("Failed to download video: Empty response body");
     }
 
-    originalFilePath = path.resolve("/tmp/originalVideo.mp4");
+    originalFilePath = path.resolve("/tmp/rawVideo.mp4");
     await fs.writeFile(originalFilePath, response.Body);
     console.log(`Downloaded video to ${originalFilePath}`);
 
     // Step 2: Transcode the video into multiple resolutions
     console.log("Starting transcoding...");
+    await publishToRedis({
+      status: "Transcoding",
+      message: "Starting transcoding...",
+    });
 
     const promises = RESOLUTIONS.map((resolution) => {
       const outputPath = path.resolve(`/tmp/video-${resolution.name}.mp4`);
-      
+
       // Save in videos/<videoId>/<resolution>.mp4
       const outputKey = `videos/${videoId}/${resolution.name}.mp4`;
 
@@ -96,17 +106,18 @@ const init = async () => {
           .on("start", async () => {
             console.log("Transcoding Started for", resolution.name);
           })
-          .on("progress", (progress) => {
-            console.log(
-              `Transcoding ${resolution.name}: ${progress.percent}% complete`
-            );
-          })
+          // .on("progress", (progress) => {
+          //   console.log(
+          //     `Transcoding ${resolution.name}: ${progress.percent}% complete`
+          //   );
+          // })
           .on("end", async () => {
             try {
               // Step 3: Save the transcoded video to S3 simultaneously
               console.log(
                 `Uploading ${resolution.name} to s3://${outputBucket}/${outputKey}...`
               );
+
               const uploadCommand = new PutObjectCommand({
                 Bucket: outputBucket,
                 Key: outputKey,
@@ -115,6 +126,12 @@ const init = async () => {
               });
 
               await s3Client.send(uploadCommand);
+
+              await publishToRedis({
+                status: "Transcoding",
+                message: `Transcoding ${resolution.name} completed`,
+              });
+
               console.log(
                 `Uploaded ${resolution.name} to s3://${outputBucket}/${outputKey}`
               );
@@ -129,11 +146,19 @@ const init = async () => {
                 `Failed to upload ${resolution.name}:`,
                 uploadError
               );
+              await publishToRedis({
+                status: "Transcoding",
+                message: `Failed to upload ${resolution.name}`,
+              });
               reject(uploadError);
             }
           })
-          .on("error", (err) => {
+          .on("error", async (err) => {
             console.error(`Transcoding failed for ${resolution.name}:`, err);
+            await publishToRedis({
+              status: "Transcoding",
+              message: `Transcoding failed for ${resolution.name}`,
+            });
             reject(err);
           })
           .run();
@@ -141,6 +166,10 @@ const init = async () => {
     });
 
     const outputKeys = await Promise.all(promises);
+    await publishToRedis({
+      status: "Transcoding",
+      message: `Transcoding complete. Output keys: ${outputKeys.join(", ")}`,
+    });
     console.log("Transcoding complete. Output keys:", outputKeys);
 
     // Remove the original file after transcoding
@@ -151,7 +180,6 @@ const init = async () => {
     // Clean up if the original file exists
     if (originalFilePath) {
       try {
-
         // Attempt to remove the original file if it exists
         await fs.unlink(originalFilePath);
         console.log(`Cleaned up original file on error: ${originalFilePath}`);
