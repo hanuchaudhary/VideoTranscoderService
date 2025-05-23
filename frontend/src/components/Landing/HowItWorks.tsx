@@ -25,8 +25,8 @@ export function HowItWorks() {
               video file via our intuitive dashboard or API.
             </li>
             <li>
-              <span className="text-purple-400 font-medium">Select</span> desired
-              formats and resolutions (144p to 4K).
+              <span className="text-purple-400 font-medium">Select</span>{" "}
+              desired formats and resolutions (144p to 4K).
             </li>
             <li>
               <span className="text-green-400 font-medium">Download</span> or
@@ -42,13 +42,13 @@ export function HowItWorks() {
             </button>
           </div>
         </div>
-        <div className="hidden md:block">
+        {/* <div className="hidden md:block">
           <img
             src="/assets/how-it-works-infographic.png"
             alt="How it works infographic"
             className="w-full h-auto"
           />
-        </div>
+        </div> */}
       </div>
     </section>
   );
