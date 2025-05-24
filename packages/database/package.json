@@ -1,13 +1,25 @@
 {
-  "name": "database",
+  "name": "@repo/database",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "exports": {
+    "./client": "./src/index.ts"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@9.0.0"
+  "packageManager": "pnpm@9.0.0",
+  "dependencies": {
+    "@prisma/client": "6.8.2",
+    "@prisma/extension-accelerate": "^2.0.0",
+    "@repo/typescript-config": "workspace:*",
+    "prisma": "^6.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21"
+  }
 }

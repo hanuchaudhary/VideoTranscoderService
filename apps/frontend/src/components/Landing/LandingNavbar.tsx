@@ -12,17 +12,21 @@ export default function LandingNavbar() {
             <Logo />
             <span className="md:text-xl text-lg font-semibold">Voxer</span>
             <span className="bg-secondary px-2 py-0.5 border text-xs font-medium text-muted-foreground">
-            beta
+              beta
             </span>
           </Link>
         </div>
         <div className="flex gap-2">
-          <Button variant={"outline"} size={"sm"}>
-            Login
-          </Button>
-          <Button variant="default" size={"sm"}>
-            Sign Up
-          </Button>
+          <Link href={"/signin"}>
+            <Button variant={"outline"} size={"sm"}>
+              Login
+            </Button>
+          </Link>
+          <Link href={"/register"}>
+            <Button variant="default" size={"sm"}>
+              Sign Up
+            </Button>
+          </Link>
         </div>
       </div>
     </header>

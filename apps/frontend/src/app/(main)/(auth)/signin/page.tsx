@@ -1,7 +1,8 @@
 import React from 'react'
+import SignInPage from './SigninPage'
 
 export default function Page() {
   return (
-    <div>Page</div>
+    <SignInPage/>
   )
 }

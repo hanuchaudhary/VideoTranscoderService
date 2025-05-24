@@ -1,12 +1,10 @@
 import {
-  SQSClient,
   ReceiveMessageCommand,
   DeleteMessageCommand,
 } from "@aws-sdk/client-sqs";
 import type { S3Event } from "aws-lambda";
-import { ECSClient, RunTaskCommand } from "@aws-sdk/client-ecs";
+import { RunTaskCommand } from "@aws-sdk/client-ecs";
 import {
-  S3Client,
   PutObjectCommand,
   GetObjectCommand,
   ListObjectsV2Command,
@@ -16,6 +14,9 @@ import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import cors from "cors";
 import redis from "ioredis";
+import { prisma } from "@repo/database/src";
+import { ecsClient, s3Client, sqsClient } from "./config/config";
+import { userRouter } from "./routes/user.route";
 
 dotenv.config({ path: ".env" });
 
@@ -29,26 +30,7 @@ app.use(
   })
 );
 
-// Validate environment variables
-const requiredEnvVars = [
-  "AWS_ACCESS_KEY_ID",
-  "AWS_SECRET_ACCESS_KEY",
-  "AWS_REGION",
-  "SQS_QUEUE_URL",
-  "TASK_DEFINITION_ARN",
-  "TRANSCODED_VIDEOS_BUCKET_NAME",
-  "S3_BUCKET_NAME",
-  "ECS_CLUSTER_ARN",
-  "ECS_SUBNETS",
-  "ECS_SECURITY_GROUPS",
-  "REDIS_URL",
-];
-for (const envVar of requiredEnvVars) {
-  if (!process.env[envVar]) {
-    console.error(`Missing environment variable: ${envVar}`);
-    process.exit(1);
-  }
-}
+app.use("/api/v1", userRouter);
 
 // Redis client
 const redisClient = new redis(process.env.REDIS_URL!);
@@ -60,36 +42,17 @@ redisClient.subscribe("transcoding", (err) => {
   console.log("Subscribed to transcoding channel");
 });
 
-redisClient.on("message", (channel, message) => {
+redisClient.on("message", async (channel, message) => {
   console.log(`Received message from channel ${channel}:`, message);
-  // Handle the message as needed
-});
 
-// SQS Queue client
-const sqsClient = new SQSClient({
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-  region: process.env.AWS_REGION!,
-});
-
-// ECS client
-const ecsClient = new ECSClient({
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-  region: process.env.AWS_REGION!,
-});
-
-// S3 client
-const s3Client = new S3Client({
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
-  },
-  region: process.env.AWS_REGION!,
+  // TODO: Process the message
+  await prisma.jobLog.create({
+    data: {
+      logLevel: "info",
+      logMessage: message,
+      jobId: "1234",
+    },
+  });
 });
 
 // Pre-signed URL endpoint

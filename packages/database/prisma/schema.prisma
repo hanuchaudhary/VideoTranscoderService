@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// TODO: Implement payment processing and subscription management
+enum PricingPlan {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model User {
+  id           String      @id @default(uuid()) @map("user_id")
+  email        String      @unique
+  username     String      
+  password     String
+  plan         PricingPlan @default(FREE)
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+  jobs         Job[]       @relation("UserJobs")
+
+  @@index([email]) // Index for faster email lookups 
+  @@map("users")
+}
+
+model Job {
+  id           String    @id @default(uuid()) @map("job_id")
+  userId       String    @map("user_id")
+  user         User      @relation("UserJobs", fields: [userId], references: [id], onDelete: Cascade)
+  inputS3Path  String    @map("input_s3_path")
+  outputS3Path String?   @map("output_s3_path") // 
+  status       JobStatus @default(PENDING)
+  resolutions  Json // e.g., ["144p", "720p", "4K"]
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  errorMessage String?   @map("error_message")
+  logs         JobLog[]  @relation("JobLogs")
+
+  @@index([userId]) 
+  @@map("transcoding_jobs")
+}
+
+// Model for job logs (detailed FFmpeg logs)
+model JobLog {
+  id         String   @id @default(uuid()) @map("log_id")
+  jobId      String   @map("job_id")
+  job        Job      @relation("JobLogs", fields: [jobId], references: [id], onDelete: Cascade)
+  logMessage String   @map("log_message")
+  logLevel   String   @map("log_level")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([jobId]) 
+  @@map("job_logs")
+}
