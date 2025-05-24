@@ -1,26 +1,32 @@
 {
   "name": "@repo/database",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "db:push": "drizzle-kit push",
+    "db:migrate": "drizzle-kit migrate",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/seed.ts"
   },
   "exports": {
-    "./client": "./src/index.ts"
+    "./client": "./src/db/index.ts",
+    "./schema": "./src/db/schema.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@9.0.0",
   "dependencies": {
-    "@prisma/client": "6.8.2",
-    "@prisma/extension-accelerate": "^2.0.0",
     "@repo/typescript-config": "workspace:*",
-    "dotenv": "^16.4.7",
-    "prisma": "^6.8.2"
+    "@vercel/postgres": "^0.10.0",
+    "dotenv": "^16.5.0",
+    "drizzle-orm": "^0.43.1",
+    "pg": "^8.16.0"
   },
   "devDependencies": {
-    "@types/node": "^22.15.21"
+    "@types/node": "^22.15.21",
+    "@types/pg": "^8.15.2",
+    "drizzle-kit": "^0.31.1",
+    "tsx": "^4.19.4"
   }
 }

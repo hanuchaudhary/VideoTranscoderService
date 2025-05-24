@@ -22,15 +22,9 @@ dotenv.config({ path: ".env" });
 
 const app = express();
 app.use(express.json());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
+app.use(cors());
 
-app.use("/api/v1", userRouter);
+app.use("/api/v1/user", userRouter);
 app.use("/api/v1", transcodingRouter);
 
 // Redis client
@@ -47,13 +41,6 @@ redisClient.on("message", async (channel, message) => {
   console.log(`Received message from channel ${channel}:`, message);
 
   // TODO: Process the message
-  // await prisma.jobLog.create({
-  //   data: {
-  //     logLevel: "info",
-  //     logMessage: message,
-  //     jobId: "1234",
-  //   },
-  // });
 });
 
 // Pre-signed URL endpoint

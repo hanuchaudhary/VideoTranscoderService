@@ -1,17 +1,21 @@
 import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { prismaClient } from "@repo/database/client";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import bcryptjs from "bcryptjs";
+import { db } from "@repo/database/client";
+import { schema } from "@repo/database/schema";
+import { randomUUID } from "crypto";
 
-console.log("Initializing BetterAuth with Prisma Adapter");
 export const auth = betterAuth({
-  database: prismaAdapter(prismaClient, {
-    provider: "postgresql",
-    debugLogs: true, 
+  database: drizzleAdapter(db, {
+    provider: "pg",
+    debugLogs: true,
+    schema: schema, // Pass the schema object directly
   }),
+  secret: process.env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
+    generateUserId: async () => randomUUID(), // Ensure valid UUID strings for user IDs
     password: {
       hash: async (password: string) => {
         const salt = await bcryptjs.genSalt(10);
@@ -24,15 +28,9 @@ export const auth = betterAuth({
         password: string;
         hash: string;
       }) => {
-        // Verify the password using bcryptjs
         const verifyPassword = await bcryptjs.compare(password, hash);
-        if (!verifyPassword) {
-          return false;
-        }
-        return true;
+        return verifyPassword;
       },
     },
   },
 });
-
-console.log("BetterAuth initialized with Prisma Adapter");

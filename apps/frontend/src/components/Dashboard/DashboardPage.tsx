@@ -311,7 +311,6 @@ export function DashboardPage() {
             <div className="relative h-80 w-full border overflow-hidden">
               <Button
                 type="button"
-                variant="box"
                 className="absolute top-2 right-2 z-10 backdrop-blur-lg"
                 onClick={clearVideo}
               >
@@ -328,7 +327,7 @@ export function DashboardPage() {
                 {videoFile?.name || "Selected video"}
               </p>
               <div className="flex w-full justify-end">
-                <Button size={"default"} variant={"box"} type="submit">
+                <Button size={"default"} type="submit">
                   Transcode Video
                 </Button>
               </div>
