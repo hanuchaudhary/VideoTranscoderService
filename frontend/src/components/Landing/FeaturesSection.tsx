@@ -2,9 +2,9 @@ import React from "react";
 import { CpuArchitecture } from "../ui/cpu-architecture";
 import { MultipleUploadDiagram } from "./MultipleUploadDiagram";
 import {
-  IconAi,
   IconCpu,
-  IconMessageFilled,
+  IconCube,
+  IconDevices,
   IconPlayerPlayFilled,
   IconWorldUpload,
 } from "@tabler/icons-react";
@@ -53,18 +53,26 @@ export function FeaturesSection() {
           </div>
         </div>
         <div className="grid md:grid-cols-2 grid-cols-1 md:gap-8 gap-4 h-full">
-          <div className="md:border-r h-full md:p-10 p-5">
-            <p className="flex items-center gap-2 text-muted-foreground">
-              <IconAi />
-              <span className=" ">High Quality</span>
-            </p>
-            <p className="font-semibold md:text-2xl text-xl mt-4">
-              Preserve video quality with advanced encoding algorithms.
-            </p>
+          <div className="md:border-r h-full md:p-10 p-5 flex flex-col justify-between">
+            <div>
+              <p className="flex items-center gap-2 text-muted-foreground">
+                <IconCube />
+                <span className=" ">High Quality</span>
+              </p>
+              <p className="font-semibold md:text-2xl text-xl mt-4">
+                Preserve video quality with advanced encoding algorithms.
+              </p>
+            </div>
+            <div className="flex font-semibold gap-2">
+              <div className="border-2 bg-secondary/30 p-3">Video</div>
+              <div className="border-2 bg-secondary/30 p-3">Storage</div>
+              <div className="border-2 bg-secondary/30 p-3">Transcoding</div>
+              <div className="border-2 bg-secondary/30 p-3">Streaming</div>
+            </div>
           </div>
           <div className="h-full md:p-10 p-5">
             <p className="flex items-center gap-2 text-muted-foreground">
-              <IconMessageFilled className="w-5 h-5" />
+              <IconDevices className="w-5 h-5" />
               <span className="">Cross-Platform Compatibility</span>
             </p>
             <p className="font-semibold md:text-2xl text-xl mt-4">
@@ -72,13 +80,13 @@ export function FeaturesSection() {
             </p>
             <div className="pb-6 pt-14 w-full flex flex-col items-center justify-center">
               <div className="flex items-center justify-center w-20 h-20 rounded-full bg-secondary/30 text-primary">
-              <IconPlayerPlayFilled className="h-10 w-10 animate-in" />
+                <IconPlayerPlayFilled className="h-10 w-10 animate-in" />
               </div>
               <ShinyText
-              text='"Effortlessly transcode your videos with unmatched speed and quality!"'
-              disabled={false}
-              speed={3}
-              className="italic text-sm text-muted-foreground mt-4"
+                text='"Effortlessly transcode your videos with unmatched speed and quality!"'
+                disabled={false}
+                speed={3}
+                className="italic text-sm text-muted-foreground mt-4"
               />
             </div>
           </div>

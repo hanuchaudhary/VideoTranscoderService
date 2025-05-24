@@ -77,7 +77,6 @@ const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProps> = ({
   const { theme } = useTheme();
   gradientColors = gradientColors || [
     theme === "dark" ? "#000000" : "#FFFFFF",
-    // theme === "dark" ? "#0A0A0A" : "#FFFFFF",
     "#2979FF",
     "#FF80AB",
     "#FF6D00",
@@ -144,7 +143,7 @@ const AnimatedGradientBackground: React.FC<AnimatedGradientBackgroundProps> = ({
       }}
       animate={{
         opacity: 1,
-        scale: 1,
+        scale: 1.15,
         transition: {
           duration: 2,
           ease: [0.25, 0.1, 0.25, 1], // Cubic bezier easing

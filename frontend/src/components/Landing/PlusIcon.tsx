@@ -4,6 +4,7 @@ import React from "react";
 export default function PlusIcon() {
   return (
     <Image
+      className="opacity-50"
       src={"/plus.svg"}
       alt="plus"
       height={31}

@@ -5,7 +5,7 @@ import { Logo } from "../Logo";
 
 export default function LandingNavbar() {
   return (
-    <header className="fixed w-full left-0 top-0 z-50 dark:bg-black/80 backdrop-blur-xl bg-white/80">
+    <header className="fixed w-full left-0 top-0 z-[60] dark:bg-black/80 backdrop-blur-xl bg-white/80">
       <div className="md:px-8 px-4 py-4 flex items-center justify-between">
         <div className="flex items-center">
           <Link className="flex items-center justify-center gap-1.5" href={"/"}>
