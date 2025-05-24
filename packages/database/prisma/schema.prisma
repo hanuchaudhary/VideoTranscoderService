@@ -30,17 +30,45 @@ enum JobStatus {
 }
 
 model User {
-  id           String      @id @default(uuid()) @map("user_id")
-  email        String      @unique
-  username     String      
-  password     String
-  plan         PricingPlan @default(FREE)
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  jobs         Job[]       @relation("UserJobs")
+  id            String      @id @default(uuid()) @map("user_id")
+  email         String      @unique
+  name          String
+  password      String?
+  emailVerified Boolean?    @default(false) @map("email_verified")
+  plan          PricingPlan @default(FREE)
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
+  jobs          Job[]       @relation("UserJobs")
+  accounts      Account[]
+  sessions       Session[]
 
   @@index([email]) // Index for faster email lookups 
   @@map("users")
+}
+
+model Account {
+  id         String   @id @default(cuid())
+  userId     String
+  providerId String
+  accountId  String   @unique
+  password   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Job {
@@ -56,7 +84,7 @@ model Job {
   errorMessage String?   @map("error_message")
   logs         JobLog[]  @relation("JobLogs")
 
-  @@index([userId]) 
+  @@index([userId])
   @@map("transcoding_jobs")
 }
 
@@ -69,6 +97,6 @@ model JobLog {
   logLevel   String   @map("log_level")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  @@index([jobId]) 
+  @@index([jobId])
   @@map("job_logs")
 }

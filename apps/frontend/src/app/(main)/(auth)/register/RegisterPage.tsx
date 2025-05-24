@@ -24,9 +24,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { authClient } from "@/lib/authClient";
+import { toast } from "sonner";
 
 const formSchema = z.object({
-  username: z.string().min(3, {
+  name: z.string().min(3, {
     message: "Username must be at least 3 characters.",
   }),
   email: z.string().email({
@@ -39,25 +40,49 @@ const formSchema = z.object({
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      name: "",
       email: "",
       password: "",
     },
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    const res = await authClient.signUp.email({
-      email: values.email,
-      password: values.password,
-      name: values.username,
-    });
-
-    console.log("Sign Up Response:", res);
+    setLoading(true);
+    try {
+      const { data, error } = await authClient.signUp.email(
+        {
+          email: values.email,
+          password: values.password,
+          name: values.name,
+        },
+        {
+          onRequest: (ctx) => {
+            toast.loading("Creating account...");
+          },
+          onSuccess: (ctx) => {
+            toast.dismiss();
+            toast.success("Account created successfully! Please sign in.");
+          },
+          onError: (ctx) => {
+            toast.dismiss();
+            toast.error("Error creating account. Please try again.", {
+              description: ctx.error.message,
+            });
+          },
+        }
+      );
+    } catch (error: any) {
+      toast.error("Error creating account. Please try again.", {
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -72,12 +97,16 @@ export default function RegisterPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="username"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your username" {...field} />
+                      <Input
+                        placeholder="Enter your name"
+                        {...field}
+                        disabled={loading}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -90,7 +119,11 @@ export default function RegisterPage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email" {...field} />
+                      <Input
+                        placeholder="Enter your email"
+                        {...field}
+                        disabled={loading}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -108,6 +141,7 @@ export default function RegisterPage() {
                           type={showPassword ? "text" : "password"}
                           placeholder="Enter your password"
                           {...field}
+                          disabled={loading}
                         />
                         <Button
                           type="button"
@@ -115,6 +149,7 @@ export default function RegisterPage() {
                           size="sm"
                           className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                           onClick={() => setShowPassword(!showPassword)}
+                          disabled={loading}
                         >
                           {showPassword ? (
                             <EyeOff className="h-4 w-4" />
@@ -128,8 +163,8 @@ export default function RegisterPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Sign Up
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? "Signing Up..." : "Sign Up"}
               </Button>
             </form>
           </Form>
