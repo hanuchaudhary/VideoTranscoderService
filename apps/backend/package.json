@@ -10,7 +10,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.8.0",
+  "packageManager": "pnpm@9.0.0",
   "dependencies": {
     "@aws-sdk/client-ecs": "^3.782.0",
     "@aws-sdk/client-s3": "^3.787.0",
