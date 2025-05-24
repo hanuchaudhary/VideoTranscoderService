@@ -14,9 +14,9 @@ import dotenv from "dotenv";
 import express, { Request, Response } from "express";
 import cors from "cors";
 import redis from "ioredis";
-import { prisma } from "@repo/database/src";
 import { ecsClient, s3Client, sqsClient } from "./config/config";
 import { userRouter } from "./routes/user.route";
+import { transcodingRouter } from "./routes/transcoding.route";
 
 dotenv.config({ path: ".env" });
 
@@ -31,6 +31,7 @@ app.use(
 );
 
 app.use("/api/v1", userRouter);
+app.use("/api/v1", transcodingRouter);
 
 // Redis client
 const redisClient = new redis(process.env.REDIS_URL!);
@@ -46,13 +47,13 @@ redisClient.on("message", async (channel, message) => {
   console.log(`Received message from channel ${channel}:`, message);
 
   // TODO: Process the message
-  await prisma.jobLog.create({
-    data: {
-      logLevel: "info",
-      logMessage: message,
-      jobId: "1234",
-    },
-  });
+  // await prisma.jobLog.create({
+  //   data: {
+  //     logLevel: "info",
+  //     logMessage: message,
+  //     jobId: "1234",
+  //   },
+  // });
 });
 
 // Pre-signed URL endpoint
