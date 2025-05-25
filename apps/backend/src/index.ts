@@ -25,7 +25,7 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/api/v1/user", userRouter);
-app.use("/api/v1", transcodingRouter);
+app.use("/api/v1/transcoding", transcodingRouter);
 
 // Redis client
 const redisClient = new redis(process.env.REDIS_URL!);
