@@ -15,6 +15,7 @@
     "@radix-ui/react-slot": "^1.2.3",
     "@repo/database": "workspace:*",
     "@tabler/icons-react": "^3.31.0",
+    "@tanstack/react-table": "^8.21.3",
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "better-auth": "^1.2.8",

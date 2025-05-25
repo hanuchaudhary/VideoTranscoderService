@@ -10,7 +10,7 @@ import { Upload, X, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useVideoStore } from "@/store/transcodingStore";
-import { BACKEND_URL } from "../../../config";
+import { BACKEND_URL } from "@/config";
 
 const VIDEO_QUALITIES = [
   { value: "144p", label: "144p", height: 144 },
