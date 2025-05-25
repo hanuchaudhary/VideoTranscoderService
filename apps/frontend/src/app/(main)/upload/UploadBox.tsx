@@ -2,15 +2,15 @@ import React, { useState } from "react";
 import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IconMovie } from "@tabler/icons-react";
+import { useVideoStore } from "@/store/videoStore";
 
-type UploadBoxProps = {
-  progress: number;
-  loading: boolean;
-};
-
-const UploadBox = ({ loading, progress }: UploadBoxProps) => {
+const UploadBox = () => {
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+
+  const {  uploadProgress, cancelUpload } = useVideoStore();
+
+  if (!isVisible) return null;
 
   return (
     <div className="fixed bottom-4 right-4 w-[460px] bg-primary-foreground border z-50 shadow-lg">
@@ -47,6 +47,11 @@ const UploadBox = ({ loading, progress }: UploadBoxProps) => {
             </div>
             <div className="flex items-center gap-2">
               <Button
+                onClick={() => {
+                  if (cancelUpload) {
+                    cancelUpload();
+                  }
+                }}
                 variant="box"
                 size="sm"
                 className="text-xs px-2 py-0.5 rounded-none"
@@ -55,14 +60,15 @@ const UploadBox = ({ loading, progress }: UploadBoxProps) => {
               </Button>
             </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="w-full bg-neutral-200 rounded-full h-2">
             <div
               className="bg-blue-600 h-2 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
+              style={{ width: `${uploadProgress}%` }}
             ></div>
           </div>
           <p className="text-xs text-muted-foreground">
-            {progress! < 100 ? "Uploading..." : "Uploaded"} {progress}%
+            {uploadProgress! < 100 ? "Uploading..." : "Uploaded"}{" "}
+            {uploadProgress}%
           </p>
         </div>
       )}
