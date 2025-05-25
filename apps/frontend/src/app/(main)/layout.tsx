@@ -14,7 +14,7 @@ export default function DashboardLayout({
   return (
       <div className={`dark:bg-black bg-white w-full`}>
         <DashboardNavbar />
-        <div className="max-w-5xl mx-auto px-4">{children}</div>
+        <div className="max-w-7xl mx-auto px-4">{children}</div>
       </div>
   );
 }

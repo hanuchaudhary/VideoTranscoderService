@@ -21,8 +21,12 @@ import { transcodingRouter } from "./routes/transcoding.route";
 dotenv.config({ path: ".env" });
 
 const app = express();
-app.use(express.json());
-app.use(cors());
+
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+}));
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/transcoding", transcodingRouter);
@@ -43,32 +47,6 @@ redisClient.on("message", async (channel, message) => {
   // TODO: Process the message
 });
 
-// Pre-signed URL endpoint
-app.post("/preSignedUrl", async (req: Request, res: Response) => {
-  try {
-    const { fileName, fileType, videoId } = req.body;
-    if (!fileName || !fileType || !videoId) {
-      res
-        .status(400)
-        .json({ error: "fileName, fileType, and videoId are required" });
-      return;
-    }
-
-    const command = new PutObjectCommand({
-      Bucket: process.env.S3_BUCKET_NAME, // Temporary bucket for uploads
-      Key: `videos/${videoId}/${fileName}`,
-      ContentType: fileType,
-    });
-
-    const signedUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: 3600,
-    });
-    res.json({ url: signedUrl, method: "PUT" });
-  } catch (error) {
-    console.error("Error generating pre-signed URL:", error);
-    res.status(500).json({ error: "Failed to generate pre-signed URL" });
-  }
-});
 
 // Fetch transcoded formats
 app.get("/videos/:videoId", async (req: Request, res: Response) => {
@@ -78,7 +56,7 @@ app.get("/videos/:videoId", async (req: Request, res: Response) => {
 
     // List objects in the videoId folder
     const listCommand = new ListObjectsV2Command({
-      Bucket: process.env.TRANSCODED_VIDEOS_BUCKET_NAME,
+      Bucket: process.env.FINAL_BUCKET_NAME,
       Prefix: prefix,
     });
     const { Contents } = await s3Client.send(listCommand);
@@ -95,7 +73,7 @@ app.get("/videos/:videoId", async (req: Request, res: Response) => {
       Contents.map(async (obj) => {
         const key = obj.Key!;
         const command = new GetObjectCommand({
-          Bucket: process.env.S3_BUCKET_NAME,
+          Bucket: process.env.FINAL_BUCKET_NAME,
           Key: key,
         });
         const url = await getSignedUrl(s3Client, command, {
@@ -227,8 +205,8 @@ const pollForMessages = async () => {
                         { name: "KEY", value: key },
                         { name: "VIDEO_ID", value: videoId },
                         {
-                          name: "TRANSCODED_VIDEOS_BUCKET_NAME",
-                          value: process.env.TRANSCODED_VIDEOS_BUCKET_NAME,
+                          name: "FINAL_BUCKET_NAME",
+                          value: process.env.FINAL_BUCKET_NAME,
                         },
                         {
                           name: "AWS_ACCESS_KEY_ID",

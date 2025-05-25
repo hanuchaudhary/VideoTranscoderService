@@ -7,7 +7,6 @@ import {
   timestamp,
   json,
 } from "drizzle-orm/pg-core";
-import { randomUUID } from "crypto";
 
 // Enums
 export const pricingPlanEnum = pgEnum("PricingPlan", [
@@ -18,42 +17,53 @@ export const pricingPlanEnum = pgEnum("PricingPlan", [
 ]);
 
 export const jobStatusEnum = pgEnum("JobStatus", [
+  "QUEUED",
   "PENDING",
   "PROCESSING",
   "COMPLETED",
   "FAILED",
 ]);
 
+const timestamps = {
+  updatedAt: timestamp(),
+  createdAt: timestamp().defaultNow().notNull(),
+  deletedAt: timestamp(),
+};
+
 export const logLevelEnum = pgEnum("LogLevel", ["INFO", "WARN", "ERROR"]);
 
 // User Table
-export const user = pgTable("user", {
-  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  image: text("image"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+export const user = pgTable(
+  "user",
+  {
+    id: text("id").primaryKey(),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
+    ...timestamps,
+  }
+);
 
 // Session Table
-export const session = pgTable("session", {
-  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
-  expiresAt: timestamp("expires_at").notNull(),
-  token: text("token").notNull().unique(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-});
+export const session = pgTable(
+  "session",
+  {
+    id: text("id").primaryKey(),
+    expiresAt: timestamp("expires_at").notNull(),
+    token: text("token").notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    ...timestamps,
+  }
+);
 
 // Account Table
 export const account = pgTable("account", {
-  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
+  id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
   userId: text("user_id")
@@ -66,50 +76,38 @@ export const account = pgTable("account", {
   refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
   scope: text("scope"),
   password: text("password"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  ...timestamps,
 });
 
-// Verification Table
-export const verification = pgTable("verification", {
-  id: text("id").primaryKey().$defaultFn(() => randomUUID()),
-  identifier: text("identifier").notNull(),
-  value: text("value").notNull(),
-  expiresAt: timestamp("expires_at").notNull(),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
 
 // Transcoding Jobs Table
 export const transcodingJobs = pgTable("transcoding_jobs", {
-  id: text("job_id").primaryKey().$defaultFn(() => randomUUID()),
+  id: text("job_id").primaryKey(),
   userId: text("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   inputS3Path: varchar("input_s3_path").notNull(),
   outputS3Path: varchar("output_s3_path"),
   status: jobStatusEnum("status").default("PENDING"),
+  videoId: text("video_id").notNull(),
+  videoTitle: text("video_title").notNull(),
+  videoDuration: text("video_duration").notNull(),
+  videoSize: text("video_size").notNull(),
+  videoType: text("file_type").notNull(),
   resolutions: json("resolutions").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
   errorMessage: text("error_message"),
+  ...timestamps,
 });
 
 // Job Logs Table
 export const jobLogs = pgTable("job_logs", {
-  id: text("log_id").primaryKey().$defaultFn(() => randomUUID()),
+  id: text("log_id").primaryKey(),
   jobId: text("job_id")
     .notNull()
     .references(() => transcodingJobs.id, { onDelete: "cascade" }),
   logMessage: text("log_message").notNull(),
   logLevel: logLevelEnum("log_level").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .defaultNow()
-    .notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Export schema for Better Auth
@@ -117,7 +115,6 @@ export const schema = {
   user,
   session,
   account,
-  verification,
   transcodingJobs,
   jobLogs,
 };

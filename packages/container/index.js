@@ -45,7 +45,7 @@ const RESOLUTIONS = [
 
 const init = async () => {
   // Validate environment variables
-  const requiredEnvVars = ["BUCKET_NAME", "KEY", "VIDEO_ID", "REDIS_URL", "TRANSCODED_VIDEOS_BUCKET_NAME"];
+  const requiredEnvVars = ["BUCKET_NAME", "KEY", "VIDEO_ID", "REDIS_URL", "FINAL_BUCKET_NAME"];
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
       console.error(`Missing environment variable: ${envVar}`);
@@ -54,7 +54,7 @@ const init = async () => {
   }
 
   const inputBucket = process.env.BUCKET_NAME;
-  const outputBucket = process.env.TRANSCODED_VIDEOS_BUCKET_NAME;
+  const outputBucket = process.env.FINAL_BUCKET_NAME;
   const videoKey = process.env.KEY;
   const videoId = process.env.VIDEO_ID;
 

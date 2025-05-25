@@ -3,7 +3,6 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import bcryptjs from "bcryptjs";
 import { db } from "@repo/database/client";
 import { schema } from "@repo/database/schema";
-import { randomUUID } from "crypto";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
@@ -15,7 +14,6 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 6,
-    generateUserId: async () => randomUUID(), // Ensure valid UUID strings for user IDs
     password: {
       hash: async (password: string) => {
         const salt = await bcryptjs.genSalt(10);

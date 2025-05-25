@@ -8,7 +8,10 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             headers: fromNodeHeaders(req.headers),
         });
 
+        // console.log("Session data:", session);
+        
         if (!session || !session.user || !session.session) {
+            console.log("Unauthorized access attempt detected");
             res.status(401).json({ error: "Unauthorized" });
             return;
         }
