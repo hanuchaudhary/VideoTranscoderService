@@ -126,12 +126,12 @@ export const useVideoStore = create<VideoState>((set) => ({
   },
 
   handleFileValidation: (file) => {
-    if (file.type !== "video/mp4") {
-      toast.error("Invalid file type", {
-        description: "Please upload a valid MP4 video file",
-      });
-      return false;
-    }
+    // if (file.type !== "video/mp4") {
+    //   toast.error("Invalid file type", {
+    //     description: "Please upload a valid MP4 video file",
+    //   });
+    //   return false;
+    // }
 
     if (file.size > 300 * 1024 * 1024) {
       toast.error("File too large", {

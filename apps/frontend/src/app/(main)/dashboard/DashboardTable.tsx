@@ -1,3 +1,7 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React from "react";
 
 type DashboardTableData = {
@@ -16,7 +20,8 @@ export function DashboardTable() {
       id: "kaanwdkaldjljdwwlmldnlnwdnankdnk",
       videoTitle: "Sample Video",
       videoDuration: "5:00",
-      videoThumbnail: "https://via.placeholder.com/150",
+      videoThumbnail:
+        "https://images.unsplash.com/photo-1747913647304-9f298ff28ff4?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0fHx8ZW58MHx8fHx8",
       videoUrl: "https://example.com/video/1",
       videoCreatedAt: "2023-10-01T12:00:00Z",
       status: "Completed",
@@ -25,41 +30,73 @@ export function DashboardTable() {
       id: "wdckncndkcncndkncndkncndkncndkn",
       videoTitle: "Sample Video",
       videoDuration: "5:00",
-      videoThumbnail: "https://via.placeholder.com/150",
+      videoThumbnail:
+        "https://images.unsplash.com/photo-1747913647304-9f298ff28ff4?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0fHx8ZW58MHx8fHx8",
       videoUrl: "https://example.com/video/1",
       videoCreatedAt: "2023-10-01T12:00:00Z",
       status: "Completed",
     },
   ];
+
+  const router = useRouter();
+
   return (
-    <div>
-      <div className="header flex items-center justify-between border-b pb-3 mb-3">
-        <div></div>
-        <div>TITLE/ID</div>
-        <div>DURATION</div>
-        <div>STATUS</div>
-        <div>CREATED</div>
-      </div>
-      <div className="">
-        {data.map((item) => (
-          <div key={item.id} className="row flex items-center border-b py-6 justify-between">
-            <div>
-              {/* <img
-                src={item.videoThumbnail}
-                alt={item.videoTitle}
-                className="thumbnail"
-              /> */}
-            </div>
-            <div>
-              <h2 className="video-link">{item.videoTitle}</h2>
-              <p>{item.id}</p>
-            </div>
-            <div>{item.videoDuration}</div>
-            <div>{item.status}</div>
-            <div>{new Date(item.videoCreatedAt).toLocaleDateString()}</div>
-          </div>
-        ))}
-      </div>
+    <div className="">
+      <table className="min-w-full border-collapse w-full">
+        <thead>
+          <tr className="border-b text-right">
+            <th className="py-3 px-4"></th>
+            <th className="py-3 px-4 font-normal text-sm text-left">
+              TITLE / ID
+            </th>
+            <th className="py-3 px-4 font-normal text-sm">DURATION</th>
+            <th className="py-3 px-4 font-normal text-sm">STATUS</th>
+            <th className="py-3 px-4 font-normal text-sm">CREATED</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item) => (
+            <tr
+              onClick={() => router.push(`/dashboard/${item.id}`)}
+              key={item.id}
+              className="border-b hover:bg-secondary/50 transition-colors cursor-pointer"
+            >
+              <td className="py-6 px-4">
+                {/* Uncomment if you want to display thumbnails */}
+                <img
+                  src={item.videoThumbnail}
+                  alt={item.videoTitle}
+                  className="h-10 object-cover bg-secondary"
+                />
+              </td>
+              <td className="py-6 px-4">
+                <Link href={`/dashboard/${item.id}`}>
+                  <div className="font-medium">{item.videoTitle}</div>
+                  <div className="text-sm text-muted-foreground break-all">
+                    {item.id}
+                  </div>
+                </Link>
+              </td>
+              <td className="py-6 px-4 text-right font-mono">
+                {item.videoDuration}
+              </td>
+              <td className="py-6 px-4 text-right font-semibold">
+                {item.status}
+              </td>
+              <td className="py-6 px-4 text-right font-mono">
+                {new Date(item.videoCreatedAt).toLocaleString("en-US", {
+                  month: "2-digit",
+                  day: "2-digit",
+                  year: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

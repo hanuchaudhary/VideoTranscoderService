@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useVideoStore } from "@/store/transcodingStore";
 import { BACKEND_URL } from "@/config";
+import UploadBox from "./UploadBox";
 
 const VIDEO_QUALITIES = [
   { value: "144p", label: "144p", height: 144 },
@@ -109,9 +110,9 @@ export function UploadPage() {
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    accept: {
-      "video/mp4": [".mp4"],
-    },
+    // accept: {
+    //   "video/mp4": [".mp4"],
+    // },
     maxFiles: 1,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -253,6 +254,8 @@ export function UploadPage() {
         </div>
       )}
 
+      <UploadBox/>
+
       <form
         onSubmit={handleSubmit(onSubmit)}
         className={`space-y-6 flex gap-6`}
@@ -285,7 +288,7 @@ export function UploadPage() {
                   e.stopPropagation();
                   const input = document.createElement("input");
                   input.type = "file";
-                  input.accept = "video/mp4";
+                  // input.accept = "video/mp4";
                   input.onchange = (e) => {
                     const files = (e.target as HTMLInputElement).files;
                     if (files && files.length > 0) {
