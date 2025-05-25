@@ -18,15 +18,26 @@ import { ecsClient, s3Client, sqsClient } from "./config/config";
 import { userRouter } from "./routes/user.route";
 import { transcodingRouter } from "./routes/transcoding.route";
 
-dotenv.config({ path: ".env" });
+dotenv.config({
+  override: true, 
+})
+  
+  console.log(
+  "Environment Variables Loaded:",
+  process.env.AWS_ACCESS_KEY_ID,
+  process.env.AWS_SECRET_ACCESS_KEY,
+  process.env.AWS_REGION
+);
 
 const app = express();
 
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:3000",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  })
+);
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/transcoding", transcodingRouter);
@@ -46,7 +57,6 @@ redisClient.on("message", async (channel, message) => {
 
   // TODO: Process the message
 });
-
 
 // Fetch transcoded formats
 app.get("/videos/:videoId", async (req: Request, res: Response) => {

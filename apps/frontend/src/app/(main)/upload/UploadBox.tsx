@@ -3,22 +3,14 @@ import { ChevronDown, ChevronUp, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IconMovie } from "@tabler/icons-react";
 
-const UploadBox = () => {
+type UploadBoxProps = {
+  progress: number;
+  loading: boolean;
+};
+
+const UploadBox = ({ loading, progress }: UploadBoxProps) => {
   const [isMinimized, setIsMinimized] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const [progress, setProgress] = useState(0);
-
-  // Simulate upload progress
-  React.useEffect(() => {
-    if (progress < 100) {
-      const interval = setInterval(() => {
-        setProgress((prev) => Math.min(prev + 1, 100));
-      }, 100);
-      return () => clearInterval(interval);
-    }
-  }, [progress]);
-
-  if (!isVisible) return null;
+  const [isVisible, setIsVisible] = useState(false);
 
   return (
     <div className="fixed bottom-4 right-4 w-[460px] bg-primary-foreground border z-50 shadow-lg">
@@ -28,10 +20,16 @@ const UploadBox = () => {
           {isMinimized ? ` (${1})` : ""}
         </h4>
         <div className="flex items-center gap-2">
-          <button className="cursor-pointer" onClick={() => setIsMinimized(!isMinimized)}>
+          <button
+            className="cursor-pointer"
+            onClick={() => setIsMinimized(!isMinimized)}
+          >
             {isMinimized ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
-          <button className="cursor-pointer" onClick={() => setIsVisible(false)}>
+          <button
+            className="cursor-pointer"
+            onClick={() => setIsVisible(false)}
+          >
             <X size={18} />
           </button>
         </div>
@@ -42,13 +40,17 @@ const UploadBox = () => {
           <div className="text-sm text-muted-foreground">All (1)</div>
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <IconMovie/>
+              <IconMovie />
               <p className="truncate max-w-[180px] text-sm">
                 [AMV] AURA _ Solo Leveling
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="box" size="sm" className="text-xs px-2 py-0.5 rounded-none">
+              <Button
+                variant="box"
+                size="sm"
+                className="text-xs px-2 py-0.5 rounded-none"
+              >
                 Cancel
               </Button>
             </div>
@@ -60,7 +62,7 @@ const UploadBox = () => {
             ></div>
           </div>
           <p className="text-xs text-muted-foreground">
-            {progress < 100 ? "Uploading..." : "Uploaded"} {progress}%
+            {progress! < 100 ? "Uploading..." : "Uploaded"} {progress}%
           </p>
         </div>
       )}

@@ -54,6 +54,7 @@ export function UploadPage() {
 
   const [mediaLoading, setMediaLoading] = useState(false);
   const [mediaUploading, setMediaUploading] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const {
     handleSubmit,
@@ -110,9 +111,9 @@ export function UploadPage() {
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    // accept: {
-    //   "video/mp4": [".mp4"],
-    // },
+    accept: {
+      "video/mp4": [".mp4"],
+    },
     maxFiles: 1,
     onDrop: (acceptedFiles) => {
       if (acceptedFiles.length > 0) {
@@ -134,19 +135,21 @@ export function UploadPage() {
       return;
     }
 
+    setMediaUploading(true);
+    toast.loading("Starting transcoding...");
     try {
       const preResponse = await axios.post(
         `${BACKEND_URL}/api/v1/transcoding/preSignedUrl`,
         {
           fileType: videoFile.type,
-          videoId: videoFile.name.split(".")[0], // Use file name without extension as videoId
+          videoId: videoFile.name.split(".")[0],
           resolutions: data.resolutions,
           videoDuration: videoMetadata?.duration.toString() || "0",
           videoTitle: videoFile.name,
           videoSize: videoFile.size.toString(),
         },
         {
-          withCredentials: true, // Ensure cookies are sent with the request
+          withCredentials: true,
         }
       );
 
@@ -158,11 +161,20 @@ export function UploadPage() {
       }
 
       const uploadResponse = await axios({
-        url,
         method,
+        url,
         data: videoFile,
         headers: {
           "Content-Type": videoFile.type,
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total!
+          );
+          setUploadProgress(percentCompleted);
+          toast.loading(`Uploading video... ${percentCompleted}%`, {
+            id: "upload-progress",
+          });
         },
       });
 
@@ -187,6 +199,10 @@ export function UploadPage() {
           description: "Something went wrong",
         });
       }
+    } finally {
+      setMediaUploading(false);
+      toast.dismiss();
+      
     }
   };
 
@@ -254,7 +270,9 @@ export function UploadPage() {
         </div>
       )}
 
-      <UploadBox/>
+      {mediaUploading && (
+        <UploadBox progress={uploadProgress} loading={mediaUploading} />
+      )}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -423,7 +441,9 @@ export function UploadPage() {
               <Button
                 type="submit"
                 className="w-full"
-                disabled={!videoFile || !watchResolutions?.length}
+                disabled={
+                  !videoFile || !watchResolutions?.length || mediaUploading
+                }
               >
                 Transcode Video
                 {watchResolutions?.length > 0 && (

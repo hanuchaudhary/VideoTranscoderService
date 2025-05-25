@@ -7,6 +7,7 @@ import { db } from "@repo/database/client";
 import { transcodingJobs } from "@repo/database/schema";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 
 export const transcodingRouter: Router = Router();
 transcodingRouter.use(authenticateUser);
@@ -61,6 +62,10 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
       ContentType: fileType,
     });
 
+    const signedUrl = await getSignedUrl(s3Client, command, {
+      expiresIn: 3600,
+    });
+
     await db.insert(transcodingJobs).values({
       id: uuid(),
       userId: userId,
@@ -76,12 +81,36 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
       errorMessage: null,
     });
 
-    const signedUrl = await getSignedUrl(s3Client, command, {
-      expiresIn: 3600,
-    });
     res.json({ url: signedUrl, method: "PUT" });
   } catch (error) {
     console.error("Error generating pre-signed URL:", error);
     res.status(500).json({ error: "Failed to generate pre-signed URL" });
+  }
+});
+
+transcodingRouter.get("/", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized: User ID is required" });
+      return;
+    }
+
+    const videoJobs = await db
+      .select()
+      .from(transcodingJobs)
+      .where(eq(transcodingJobs.userId, userId));
+
+    if (videoJobs.length === 0) {
+      res
+        .status(404)
+        .json({ error: "No transcoding jobs found for this user." });
+      return;
+    }
+
+    res.json(videoJobs);
+  } catch (error) {
+    console.error("Error generating pre-signed URL:", error);
+    res.status(500).json({ error: "Failed to fetch transcoding jobs." });
   }
 });

@@ -2,9 +2,11 @@ import { ECSClient } from "@aws-sdk/client-ecs";
 import { S3Client } from "@aws-sdk/client-s3";
 import { SQSClient } from "@aws-sdk/client-sqs";
 import Redis from "ioredis";
-import { config } from "dotenv";
+import dotenv from "dotenv";
 
-config();
+dotenv.config({
+  override: true, 
+})
 
 const requiredEnvVars = [
   "AWS_ACCESS_KEY_ID",

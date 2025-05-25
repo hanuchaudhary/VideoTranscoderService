@@ -59,6 +59,9 @@ importers:
       dotenv:
         specifier: ^16.4.7
         version: 16.5.0
+      drizzle-orm:
+        specifier: ^0.43.1
+        version: 0.43.1(@neondatabase/serverless@0.9.5)(@prisma/client@6.8.2(prisma@6.8.2(typescript@5.8.2))(typescript@5.8.2))(@types/pg@8.15.2)(@vercel/postgres@0.10.0)(kysely@0.28.2)(pg@8.16.0)(prisma@6.8.2(typescript@5.8.2))
       express:
         specifier: ^5.1.0
         version: 5.1.0
