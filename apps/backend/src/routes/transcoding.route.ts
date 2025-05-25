@@ -4,7 +4,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client } from "../config/config";
 import { db } from "@repo/database/client";
-import { transcodingJobs } from "@repo/database/schema";
+import { jobLogs, transcodingJobs } from "@repo/database/schema";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -12,10 +12,6 @@ import { eq } from "drizzle-orm";
 export const transcodingRouter: Router = Router();
 transcodingRouter.use(authenticateUser);
 transcodingRouter.use(express.json());
-
-transcodingRouter.get("/", async (req: Request, res: Response) => {
-  res.json(req.user.id);
-});
 
 export const preSignedUrlSchema = z.object({
   fileType: z.string().min(1, "File type is required"),
@@ -112,5 +108,37 @@ transcodingRouter.get("/", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error generating pre-signed URL:", error);
     res.status(500).json({ error: "Failed to fetch transcoding jobs." });
+  }
+});
+
+transcodingRouter.get("/:id", async (req: Request, res: Response) => {
+  try {
+    const userId = req.user.id;
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized: User ID is required" });
+      return;
+    }
+
+    const jobId = req.params.id;
+    if (!jobId) {
+      res.status(400).json({ error: "Job ID is required" });
+      return;
+    }
+
+    const videoJob = await db
+      .select({
+        jobLogs,
+      })
+      .from(transcodingJobs)
+      .where(eq(transcodingJobs.id, jobId))
+    if (videoJob.length === 0) {
+      res.status(404).json({ error: "Transcoding job not found." });
+      return;
+    }
+
+    res.json(videoJob[0]);
+  } catch (error) {
+    console.error("Error fetching transcoding job:", error);
+    res.status(500).json({ error: "Failed to fetch transcoding job." });
   }
 });

@@ -26,7 +26,10 @@ const asset = {
   videoUrl: "https://example.com/play/asset",
 };
 
-export function DashboardDetailPage() {
+export function DashboardDetailPage({params}: {params: {videoId: string}}) {
+  React.useEffect(() => {
+    console.log("Fetching details for videoId:", params.videoId);
+  }, [params.videoId]);
   return (
     <section className="p-6 space-y-6">
       <div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouteStore } from "@/store/routeStore";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
@@ -15,6 +16,11 @@ type DashboardTableData = {
 };
 
 export function DashboardTable() {
+  const { fetchTranscodingJobs, transcodingJobs } = useRouteStore();
+  React.useEffect(() => {
+    fetchTranscodingJobs();
+  }, []);
+
   const data: DashboardTableData[] = [
     {
       id: "kaanwdkaldjljdwwlmldnlnwdnankdnk",
@@ -55,7 +61,7 @@ export function DashboardTable() {
           </tr>
         </thead>
         <tbody>
-          {data.map((item) => (
+          {transcodingJobs.map((item) => (
             <tr
               onClick={() => router.push(`/dashboard/${item.id}`)}
               key={item.id}
@@ -64,7 +70,7 @@ export function DashboardTable() {
               <td className="py-6 px-4">
                 {/* Uncomment if you want to display thumbnails */}
                 <img
-                  src={item.videoThumbnail}
+                  src={"https://images.unsplash.com/photo-1747913647304-9f298ff28ff4?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw0fHx8ZW58MHx8fHx8"}
                   alt={item.videoTitle}
                   className="h-10 object-cover bg-secondary"
                 />
@@ -77,14 +83,14 @@ export function DashboardTable() {
                   </div>
                 </Link>
               </td>
-              <td className="py-6 px-4 text-right font-mono">
-                {item.videoDuration}
-              </td>
+                <td className="py-6 px-4 text-right font-mono">
+                {parseFloat(item.videoDuration).toFixed(2)}s
+                </td>
               <td className="py-6 px-4 text-right font-semibold">
                 {item.status}
               </td>
               <td className="py-6 px-4 text-right font-mono">
-                {new Date(item.videoCreatedAt).toLocaleString("en-US", {
+                {new Date(item.createdAt).toLocaleString("en-US", {
                   month: "2-digit",
                   day: "2-digit",
                   year: "2-digit",
