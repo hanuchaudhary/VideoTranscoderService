@@ -12,15 +12,14 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { useRouteStore } from "@/store/routeStore";
-import { Loader2 } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import { JobLog } from "@repo/common/types";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export function DashboardDetailPage({
-  params,
-}: {
-  params: { videoId: string };
-}) {
+export function DashboardDetailPage({ jobId }: { jobId: string }) {
+  console.log("DashboardDetailPage jobId:", jobId);
+
   const {
     fetchSingleTranscodingJob,
     singleTranscodingJob,
@@ -32,12 +31,12 @@ export function DashboardDetailPage({
 
   React.useEffect(() => {
     const fetchData = async () => {
-      if (params.videoId) {
-        await fetchSingleTranscodingJob(params.videoId);
+      if (jobId) {
+        await fetchSingleTranscodingJob(jobId);
       }
     };
     fetchData();
-  }, [params.videoId, fetchSingleTranscodingJob]);
+  }, [jobId, fetchSingleTranscodingJob]);
 
   if (isFetchingSingleJob) {
     return (
@@ -62,17 +61,17 @@ export function DashboardDetailPage({
   return (
     <section className="p-6 space-y-6">
       <div>
-        <Breadcrumb className="mb-4">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{singleTranscodingJob.id}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div className="flex items-center mb-4 text-xs select-none">
+          <Link
+            className="hover:text-foreground text-muted-foreground transition-colors border-b border-primary/70 hover:border-primary leading-4 uppercase"
+            href={`/dashboard`}
+          >
+            Dashboard
+          </Link>
+          <span className={"[&>svg]:size-3.5"}>{<ChevronRight />}</span>
+          <span>{singleTranscodingJob.id}</span>
+        </div>
+
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-3xl font-bold">
             {singleTranscodingJob.videoTitle}

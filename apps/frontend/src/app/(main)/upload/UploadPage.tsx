@@ -11,6 +11,7 @@ import {
   VideoQuality,
 } from "@/store/videoStore";
 import UploadBox from "./UploadBox";
+import Link from "next/link";
 
 export function UploadPage() {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -95,6 +96,15 @@ export function UploadPage() {
     <div
       className={`relative px-2 md:py-8 ${!videoFile ? "max-w-4xl mx-auto" : ""}`}
     >
+      <div className="flex items-center mb-4 text-xs select-none">
+        <Link
+          className="hover:text-foreground text-muted-foreground transition-colors border-b border-primary/70 hover:border-primary leading-4 uppercase"
+          href={`/dashboard`}
+        >
+          Dashboard
+        </Link>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-2xl font-semibold">
           Ready to transcode your videos?

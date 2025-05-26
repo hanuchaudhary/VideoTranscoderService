@@ -47,7 +47,7 @@ function BreadcrumbLink({
         "hover:text-foreground transition-colors border-b border-primary/70 hover:border-primary leading-4",
         className
       )}
-      {...props}
+      {...props}  
     />
   );
 }

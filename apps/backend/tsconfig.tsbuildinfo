@@ -1,1 +1,1 @@
-{"root":["./global.d.ts","./src/index.ts","./src/config/auth.ts","./src/config/config.ts","./src/config/middleware.ts","./src/routes/transcoding.route.ts","./src/routes/user.route.ts"],"version":"5.8.3"}
+{"root":["./global.d.ts","./src/index.ts","./src/config/auth.ts","./src/config/config.ts","./src/config/middleware.ts","./src/routes/transcoding.route.ts","./src/routes/user.route.ts"],"version":"5.8.2"}
