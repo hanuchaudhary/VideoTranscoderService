@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ChevronDown, ChevronUp, X } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ChevronDown, ChevronUp, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { IconMovie } from "@tabler/icons-react";
 import { useVideoStore } from "@/store/videoStore";
@@ -8,9 +8,28 @@ const UploadBox = () => {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
 
-  const {  uploadProgress, cancelUpload } = useVideoStore();
+  const { uploadProgress, cancelUpload, videoFile } = useVideoStore();
+
+  // Prevent page unload during upload
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (uploadProgress !== undefined && uploadProgress < 100) {
+        e.preventDefault();
+        e.returnValue = "Upload in progress. Are you sure you want to leave?";
+        return "Upload in progress. Are you sure you want to leave?";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [uploadProgress]);
 
   if (!isVisible) return null;
+
+  const isUploading = uploadProgress !== undefined && uploadProgress < 100;
 
   return (
     <div className="fixed bottom-4 right-4 w-[460px] bg-primary-foreground border z-50 shadow-lg">
@@ -42,7 +61,7 @@ const UploadBox = () => {
             <div className="flex items-center gap-2">
               <IconMovie />
               <p className="truncate max-w-[180px] text-sm">
-                [AMV] AURA _ Solo Leveling
+                {videoFile ? videoFile.name : "No file selected"}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -66,6 +85,13 @@ const UploadBox = () => {
               style={{ width: `${uploadProgress}%` }}
             ></div>
           </div>
+          {isUploading && (
+            <div className="flex items-center gap-2 text-muted-foreground text-xs">
+              <span>
+                Do not close or refresh this page until upload is complete
+              </span>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">
             {uploadProgress! < 100 ? "Uploading..." : "Uploaded"}{" "}
             {uploadProgress}%

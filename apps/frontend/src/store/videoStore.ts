@@ -23,6 +23,7 @@ interface VideoMetadata {
 }
 
 interface VideoState {
+  returnedVideoId?: string;
   videoFile: File | null;
   videoPreview: string | null;
   videoFrame: string | null;
@@ -216,10 +217,10 @@ export const useVideoStore = create<VideoState>((set, get) => ({
       videoId: videoFile.name.split(".")[0],
       videoTitle: videoFile.name,
       videoSize: videoFile.size.toString(),
-      videoDuration: "0",
+      videoDuration: get().videoMetadata?.duration.toString() || "0",
+      resolutions: get().resolutions,
     };
 
-    // TODO: Add duration extraction logic here and Resolutions
     try {
       set({
         isUploadingMedia: true,
@@ -243,7 +244,8 @@ export const useVideoStore = create<VideoState>((set, get) => ({
         abortController: new AbortController(),
       });
 
-      const { url } = response.data;
+      const { url, jobId } = response.data;
+      set({ returnedVideoId: jobId });
       const uploadResponse = await axios.put(url, videoFile, {
         headers: {
           "Content-Type": videoFile.type,
@@ -275,7 +277,7 @@ export const useVideoStore = create<VideoState>((set, get) => ({
       toast.success("Upload successful", {
         description: `Video ${videoFile.name} uploaded successfully!`,
       });
-      toast.dismiss();
+      toast.dismiss("upload-progress");
     } catch (error: any) {
       if (error.name === "AbortError") {
         return;
@@ -291,7 +293,7 @@ export const useVideoStore = create<VideoState>((set, get) => ({
       });
     }
   },
-  cancelUpload: () => {
+  cancelUpload: async () => {
     const { abortController, isUploadingMedia } = get();
     if (isUploadingMedia && abortController) {
       abortController.abort();
@@ -303,6 +305,15 @@ export const useVideoStore = create<VideoState>((set, get) => ({
         uploadProgress: 0,
         abortController: undefined,
       });
+
+      await axios.put(`${BACKEND_URL}/api/v1/transcoding/status/${get().returnedVideoId}`, {
+        errorMessage : "Upload cancelled by user",
+        status: "CANCELED",
+      },{
+        withCredentials: true,
+      })
+
+      toast.dismiss("upload-progress");
     }
   },
 }));

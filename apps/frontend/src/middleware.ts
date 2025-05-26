@@ -7,8 +7,6 @@ export async function middleware(request: NextRequest) {
     headers: await headers(),
   });
 
-//   console.log("Session:", session);
-
   if (!session && request.nextUrl.pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/signin", request.url));
   }
@@ -27,6 +25,7 @@ export const config = {
   runtime: "nodejs",
   matcher: [
     "/dashboard/:path*",
+    "/upload",
     "/signin",
     "/register",
   ]

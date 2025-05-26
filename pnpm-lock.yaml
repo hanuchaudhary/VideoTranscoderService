@@ -24,13 +24,13 @@ importers:
         specifier: ^3.782.0
         version: 3.817.0
       '@aws-sdk/client-s3':
-        specifier: ^3.787.0
+        specifier: ^3.817.0
         version: 3.817.0
       '@aws-sdk/client-sqs':
         specifier: ^3.782.0
         version: 3.817.0
       '@aws-sdk/s3-request-presigner':
-        specifier: ^3.787.0
+        specifier: ^3.817.0
         version: 3.817.0
       '@repo/database':
         specifier: workspace:*

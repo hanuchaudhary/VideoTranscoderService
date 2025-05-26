@@ -13,9 +13,9 @@
   "packageManager": "pnpm@9.0.0",
   "dependencies": {
     "@aws-sdk/client-ecs": "^3.782.0",
-    "@aws-sdk/client-s3": "^3.787.0",
+    "@aws-sdk/client-s3": "^3.817.0",
     "@aws-sdk/client-sqs": "^3.782.0",
-    "@aws-sdk/s3-request-presigner": "^3.787.0",
+    "@aws-sdk/s3-request-presigner": "^3.817.0",
     "@repo/database": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "@types/cors": "^2.8.17",

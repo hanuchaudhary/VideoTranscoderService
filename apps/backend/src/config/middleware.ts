@@ -7,8 +7,6 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
         const session = await auth.api.getSession({
             headers: fromNodeHeaders(req.headers),
         });
-
-        // console.log("Session data:", session);
         
         if (!session || !session.user || !session.session) {
             console.log("Unauthorized access attempt detected");

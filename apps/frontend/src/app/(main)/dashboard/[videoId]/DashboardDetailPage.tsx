@@ -11,25 +11,54 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { useRouteStore } from "@/store/routeStore";
+import { Loader2 } from "lucide-react";
+import { JobLog } from "@repo/common/types";
+import { useRouter } from "next/navigation";
 
-const asset = {
-  title: "1080p",
-  videoId: "JtUsyOrc02kEqcvWU2onjuBFS5jQ3lhvFYNJThN6U5LU",
-  createdAt: "05/25/25 01:55 pm",
-  status: "Processed",
-  duration: "0:15",
-  quality: "1080p",
-  resolution: "['144p', '240p', '360p', '480p', '720p', '1080p']",
-  frameRate: "60.000",
-  aspectRatio: "76:135",
-  thumbnail: "https://via.placeholder.com/300x168",
-  videoUrl: "https://example.com/play/asset",
-};
+export function DashboardDetailPage({
+  params,
+}: {
+  params: { videoId: string };
+}) {
+  const {
+    fetchSingleTranscodingJob,
+    singleTranscodingJob,
+    isFetchingSingleJob,
+    deleteTranscodingJob,
+  } = useRouteStore();
 
-export function DashboardDetailPage({params}: {params: {videoId: string}}) {
+  const router = useRouter();
+
   React.useEffect(() => {
-    console.log("Fetching details for videoId:", params.videoId);
-  }, [params.videoId]);
+    const fetchData = async () => {
+      if (params.videoId) {
+        await fetchSingleTranscodingJob(params.videoId);
+      }
+    };
+    fetchData();
+  }, [params.videoId, fetchSingleTranscodingJob]);
+
+  if (isFetchingSingleJob) {
+    return (
+      <section className="p-6 space-y-6">
+        <div className="flex items-center justify-center min-h-96">
+          <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+      </section>
+    );
+  }
+
+  if (!singleTranscodingJob) {
+    return (
+      <section className="p-6 space-y-6">
+        <div className="flex items-center justify-center min-h-96">
+          <p>Asset not found</p>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="p-6 space-y-6">
       <div>
@@ -40,45 +69,102 @@ export function DashboardDetailPage({params}: {params: {videoId: string}}) {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage>{asset.videoId}</BreadcrumbPage>
+              <BreadcrumbPage>{singleTranscodingJob.id}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">{asset.title}</h1>
-          <Button variant="box">Delete</Button>
+          <h1 className="text-3xl font-bold">
+            {singleTranscodingJob.videoTitle}
+          </h1>
+          <Button
+            onClick={async () => {
+              if (deleteTranscodingJob) {
+                await deleteTranscodingJob(singleTranscodingJob.id!);
+              }
+              router.push("/dashboard");
+            }}
+            variant="box"
+          >
+            Delete
+          </Button>
         </div>
 
         <div className="flex border">
           <div className="w-full max-w-lg h-96 bg-secondary overflow-">
             <video
-              src={asset.videoUrl}
+              src={"singleTranscodingJob.videoUrl"}
               controls
               className="h-full w-full object-cover"
             />
           </div>
 
           <div className="py-4 px-6 w-full text-sm space-y-3 font-mono">
-            <Info label="Title" value={asset.title} />
-            <Info label="Video ID" value={asset.videoId} />
-            <Info label="Created" value={asset.createdAt} />
-            <Info label="Status" value={<Badge>{asset.status}</Badge>} />
-            <Info label="Duration" value={asset.duration} />
-            <Info label="Original Quality" value={asset.quality} />
-            <Info label="Resolutions" value={asset.resolution} />
-            <Info label="Max Frame Rate" value={asset.frameRate} />
-            <Info label="Aspect Ratio" value={asset.aspectRatio} />
+            <Info label="Title" value={singleTranscodingJob.videoTitle} />
+            <Info label="Video ID" value={singleTranscodingJob.id} />
+            <Info
+              label="Created"
+              value={new Date(singleTranscodingJob.createdAt).toLocaleString(
+                "en-US",
+                {
+                  month: "2-digit",
+                  day: "2-digit",
+                  year: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                }
+              )}
+            />
+            <Info
+              label="Status"
+              value={<Badge>{singleTranscodingJob.status}</Badge>}
+            />
+            <Info
+              label="Duration"
+              value={`${Number.parseFloat(singleTranscodingJob.videoDuration).toFixed(2)}s`}
+            />
+            <Info label="Original Quality" value={"1080p"} />
+            <Info
+              label="Resolutions"
+              value={
+                singleTranscodingJob.resolutions.map((e) => {
+                  return [e, ", "].join("");
+                }) || "N/A"
+              }
+            />
+            <Info label="Max Frame Rate" value={"60FPS"} />
+            <Info label="Aspect Ratio" value={"16:10"} />
           </div>
         </div>
       </div>
 
-      <TabSection />
+      <TabSection logs={singleTranscodingJob.logs} />
     </section>
   );
 }
 
-const TabSection = () => {
+const TabSection = ({
+  logs,
+  exportData,
+}: {
+  logs?: JobLog[];
+  exportData?: { title: string; url: string }[];
+}) => {
   const [activeTab, setActiveTab] = React.useState<"logs" | "export">("logs");
+
+  function logLevelToColor(logLevel: string) {
+    switch (logLevel) {
+      case "INFO":
+        return "text-blue-500";
+      case "WARN":
+        return "text-yellow-500";
+      case "ERROR":
+        return "text-red-500";
+      default:
+        return "text-gray-500";
+    }
+  }
 
   return (
     <div className="flex flex-col border">
@@ -108,24 +194,32 @@ const TabSection = () => {
         {activeTab === "logs" && (
           <div>
             <div className="space-y-2 flex flex-col font-mono text-sm">
-              <span>
-                <span>2023-10-01 12:00:00</span> - Video processing started
-              </span>
-              <span>
-                <span>2023-10-01 12:05:00</span> - Video processing completed
-              </span>
-              <span>
-                <span>2023-10-01 12:10:00</span> - Video uploaded to storage
-              </span>
-              <span>
-                <span>2023-10-01 12:00:00</span> - Video processing started
-              </span>
-              <span>
-                <span>2023-10-01 12:05:00</span> - Video processing completed
-              </span>
-              <span>
-                <span>2023-10-01 12:10:00</span> - Video uploaded to storage
-              </span>
+              {logs?.length === 0 ? (
+                <span className="text-muted-foreground">
+                  No logs available for this video.
+                </span>
+              ) : (
+                logs?.map((log, index) => (
+                  <span key={index}>
+                    <span
+                      className={`${logLevelToColor(log.logLevel.toUpperCase())}`}
+                    >
+                      [{log.logLevel.toUpperCase()}]{" "}
+                    </span>
+                    <span>
+                      {new Date(log.createdAt).toLocaleString("en-US", {
+                        month: "2-digit",
+                        day: "2-digit",
+                        year: "2-digit",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </span>{" "}
+                    - {log.logMessage}
+                  </span>
+                ))
+              )}
             </div>
           </div>
         )}

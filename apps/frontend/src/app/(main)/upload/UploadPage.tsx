@@ -163,7 +163,7 @@ export function UploadPage() {
             <div>
               <div className="relative h-[28rem] w-full flex items-center justify-center rounded-none">
                 {videoFrame ? (
-                  <div className="absolute inset-0 z-10 scale- blur-2xl flex items-center justify-center">
+                  <div className="absolute inset-0 z-10 blur-2xl flex items-center justify-center">
                     <img
                       src={videoFrame}
                       alt="Video frame preview"
@@ -173,8 +173,9 @@ export function UploadPage() {
                 ) : null}
                 <Button
                   type="button"
-                  variant="box"
-                  className="absolute top-2 right-2 z-30"
+                  size={"sm"}
+                  variant="outline"
+                  className="absolute top-2 right-2 z-30 rounded-[8px] bg-secondary/30 hover:bg-secondary/40 backdrop-blur-sm border-secondary/30"
                   onClick={() => {
                     resetState();
                     if (fileInputRef.current) {

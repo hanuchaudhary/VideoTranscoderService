@@ -73,7 +73,7 @@ export interface TranscodingJob extends Timestamps {
   videoDuration: string;
   videoSize: string;
   videoType: string;
-  resolutions: any; // Use a more specific type if known, e.g., `string[]` or custom structure
+  resolutions: string[];
   errorMessage?: string | null;
 }
 

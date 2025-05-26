@@ -7,10 +7,10 @@ import { db } from "@repo/database/client";
 import { jobLogs, transcodingJobs } from "@repo/database/schema";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 
 export const transcodingRouter: Router = Router();
-transcodingRouter.use(authenticateUser);
+// transcodingRouter.use(authenticateUser);
 transcodingRouter.use(express.json());
 
 export const preSignedUrlSchema = z.object({
@@ -43,7 +43,17 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
       videoSize,
     } = parsedData.data;
 
-    const userId = req.user.id;
+    console.log({
+      fileType,
+      videoId,
+      resolutions,
+      videoDuration,
+      videoTitle,
+      videoSize,
+    });
+
+    // const userId = req.user.id;
+    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
     if (!userId) {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
@@ -62,22 +72,25 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
       expiresIn: 3600,
     });
 
-    await db.insert(transcodingJobs).values({
-      id: uuid(),
-      userId: userId,
-      inputS3Path: VideoKey,
-      outputS3Path: null, // This will be updated later after transcoding
-      status: "PENDING",
-      videoDuration,
-      videoId,
-      videoSize,
-      videoTitle,
-      videoType: fileType,
-      resolutions: resolutions || [],
-      errorMessage: null,
-    });
+    const job = await db
+      .insert(transcodingJobs)
+      .values({
+        id: uuid(),
+        userId: userId,
+        inputS3Path: VideoKey,
+        outputS3Path: null, // This will be updated later after transcoding
+        status: "PENDING",
+        videoDuration,
+        videoId,
+        videoSize,
+        videoTitle,
+        videoType: fileType,
+        resolutions: resolutions,
+        errorMessage: null,
+      })
+      .returning({ id: transcodingJobs.id });
 
-    res.json({ url: signedUrl, method: "PUT" });
+    res.json({ url: signedUrl, method: "PUT", jobId: job[0]?.id });
   } catch (error) {
     console.error("Error generating pre-signed URL:", error);
     res.status(500).json({ error: "Failed to generate pre-signed URL" });
@@ -86,7 +99,8 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
 
 transcodingRouter.get("/", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    // const userId = req.user.id;
+    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
     if (!userId) {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
@@ -95,7 +109,8 @@ transcodingRouter.get("/", async (req: Request, res: Response) => {
     const videoJobs = await db
       .select()
       .from(transcodingJobs)
-      .where(eq(transcodingJobs.userId, userId));
+      .where(eq(transcodingJobs.userId, userId))
+      .orderBy(desc(transcodingJobs.createdAt));
 
     if (videoJobs.length === 0) {
       res
@@ -113,7 +128,46 @@ transcodingRouter.get("/", async (req: Request, res: Response) => {
 
 transcodingRouter.get("/:id", async (req: Request, res: Response) => {
   try {
-    const userId = req.user.id;
+    // const userId = req.user.id;
+    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized: User ID is required" });
+      return;
+    }
+
+    const jobId = req.params.id;
+    if (!jobId) {
+      res.status(400).json({ error: "Job ID is required" });
+      return;
+    }
+    const result = await db
+      .select()
+      .from(transcodingJobs)
+      .where(eq(transcodingJobs.id, jobId));
+
+    const logs = await db
+      .select()
+      .from(jobLogs)
+      .where(eq(jobLogs.jobId, jobId))
+      .orderBy(desc(jobLogs.createdAt));
+
+    const jobWithLogs = {
+      ...result[0],
+      logs: logs,
+    };
+
+    res.json(jobWithLogs);
+    return;
+  } catch (error) {
+    console.error("Error fetching transcoding job:", error);
+    res.status(500).json({ error: "Failed to fetch transcoding job." });
+  }
+});
+
+transcodingRouter.put("/status/:id", async (req: Request, res: Response) => {
+  try {
+    // const userId = req.user.id;
+    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
     if (!userId) {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
@@ -125,20 +179,53 @@ transcodingRouter.get("/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    const videoJob = await db
-      .select({
-        jobLogs,
-      })
-      .from(transcodingJobs)
-      .where(eq(transcodingJobs.id, jobId))
-    if (videoJob.length === 0) {
-      res.status(404).json({ error: "Transcoding job not found." });
+    const { status, outputS3Path, errorMessage } = req.body;
+
+    if (
+      !status ||
+      !["PENDING", "PROCESSING", "COMPLETED", "FAILED", "CANCELED"].includes(
+        status
+      )
+    ) {
+      res.status(400).json({ error: "Invalid status provided." });
       return;
     }
 
-    res.json(videoJob[0]);
+    await db
+      .update(transcodingJobs)
+      .set({
+        status,
+        outputS3Path: outputS3Path || null,
+        errorMessage: errorMessage || null,
+      })
+      .where(eq(transcodingJobs.id, jobId));
+
+    res.json({ message: "Transcoding job status updated successfully." });
   } catch (error) {
-    console.error("Error fetching transcoding job:", error);
-    res.status(500).json({ error: "Failed to fetch transcoding job." });
+    console.error("Error updating transcoding job status:", error);
+    res.status(500).json({ error: "Failed to update transcoding job status." });
+  }
+});
+
+transcodingRouter.delete("/:id", async (req: Request, res: Response) => {
+  try {
+    // const userId = req.user.id;
+    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized: User ID is required" });
+      return;
+    }
+
+    const jobId = req.params.id;
+    if (!jobId) {
+      res.status(400).json({ error: "Job ID is required" });
+      return;
+    }
+
+    await db.delete(transcodingJobs).where(eq(transcodingJobs.id, jobId));
+    res.json({ message: "Transcoding job deleted successfully." });
+  } catch (error) {
+    console.error("Error deleting transcoding job:", error);
+    res.status(500).json({ error: "Failed to delete transcoding job." });
   }
 });
