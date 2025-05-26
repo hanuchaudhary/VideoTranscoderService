@@ -153,7 +153,6 @@ export function UploadPage() {
 
               <input
                 type="file"
-                ref={fileInputRef}
                 onChange={handleFileChange}
                 multiple
                 accept="image/jpeg,image/png,image/gif,video/mp4"

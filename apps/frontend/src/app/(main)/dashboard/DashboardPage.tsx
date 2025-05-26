@@ -1,8 +1,8 @@
 "use client";
+
 import { authClient } from "@/lib/authClient";
 import React from "react";
 import { DashboardTable } from "./DashboardTable";
-import Link from "next/link";
 
 export function DashboardPage() {
   const { data } = authClient.useSession();

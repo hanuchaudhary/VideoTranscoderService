@@ -69,22 +69,13 @@ export function DashboardTable() {
 
   const EmptyState = () => (
     <div className="flex items-center justify-center min-h-[60vh]">
-      <Card className="w-full max-w-md">
+      <Card className="w-full rounded-none shadow-none border-none bg-transparent">
         <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-          <div className="rounded-full bg-muted p-4 mb-4">
-            <Video className="h-8 w-8 text-muted-foreground" />
-          </div>
           <h3 className="text-xl font-semibold mb-2">No assets yet</h3>
           <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
             Get started by uploading your first video asset. You can transcode, optimize, and manage all your media
             files from here.
           </p>
-          <Button asChild className="w-full">
-            <Link href="/upload" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Upload your first asset
-            </Link>
-          </Button>
         </CardContent>
       </Card>
     </div>

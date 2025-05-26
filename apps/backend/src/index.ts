@@ -4,31 +4,21 @@ import {
 } from "@aws-sdk/client-sqs";
 import type { S3Event } from "aws-lambda";
 import { RunTaskCommand } from "@aws-sdk/client-ecs";
-import {
-  PutObjectCommand,
-  GetObjectCommand,
-  ListObjectsV2Command,
-} from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express from "express";
 import cors from "cors";
 import redis from "ioredis";
-import { ecsClient, s3Client, sqsClient } from "./config/config";
+import { ecsClient, sqsClient } from "./config/config";
 import { userRouter } from "./routes/user.route";
 import { transcodingRouter } from "./routes/transcoding.route";
+import { db } from "@repo/database/client";
+import { jobLogs, transcodingJobs } from "@repo/database/schema";
+import { v4 as uuid } from "uuid";
+import { eq } from "drizzle-orm";
 
 dotenv.config({
-  override: true, 
-})
-  
-  console.log(
-  "Environment Variables Loaded:",
-  process.env.AWS_ACCESS_KEY_ID,
-  process.env.AWS_SECRET_ACCESS_KEY,
-  process.env.AWS_REGION
-);
-
+  override: true,
+});
 const app = express();
 
 app.use(
@@ -55,49 +45,32 @@ redisClient.subscribe("transcoding", (err) => {
 redisClient.on("message", async (channel, message) => {
   console.log(`Received message from channel ${channel}:`, message);
 
-  // TODO: Process the message
-});
+  const parsedMessage = JSON.parse(message);
+  await db.insert(jobLogs).values({
+    id: uuid(),
+    jobId: "2f7198ff-dcb3-4daa-b66d-3dc822cc5339",
+    logMessage: parsedMessage.message,
+    logLevel: parsedMessage.logLevel,
+  });
 
-// Fetch transcoded formats
-app.get("/videos/:videoId", async (req: Request, res: Response) => {
-  try {
-    const { videoId } = req.params;
-    const prefix = `videos/${videoId}/`;
-
-    // List objects in the videoId folder
-    const listCommand = new ListObjectsV2Command({
-      Bucket: process.env.FINAL_BUCKET_NAME,
-      Prefix: prefix,
-    });
-    const { Contents } = await s3Client.send(listCommand);
-
-    console.log("conegt", Contents);
-
-    if (!Contents || Contents.length === 0) {
-      res.status(404).json({ error: "No videos found for the given videoId" });
-      return;
-    }
-
-    // Generate signed URLs for all objects in the folder
-    const urls = await Promise.all(
-      Contents.map(async (obj) => {
-        const key = obj.Key!;
-        const command = new GetObjectCommand({
-          Bucket: process.env.FINAL_BUCKET_NAME,
-          Key: key,
-        });
-        const url = await getSignedUrl(s3Client, command, {
-          expiresIn: 3600,
-        });
-        return { key, url };
+  if (parsedMessage.status === "STARTED") {
+    await db
+      .update(transcodingJobs)
+      .set({
+        status :"PROCESSING",
       })
-    );
-
-    res.json({ urls });
-  } catch (error) {
-    console.error("Error fetching video URLs:", error);
-    res.status(500).json({ error: "Failed to fetch video URLs" });
+      .where(eq(transcodingJobs.id, "2f7198ff-dcb3-4daa-b66d-3dc822cc5339"));
   }
+  if (parsedMessage.status === "COMPLETED") {
+    await db
+      .update(transcodingJobs)
+      .set({
+        status: "COMPLETED",
+        outputS3Path: parsedMessage.outputS3Path,
+      })
+      .where(eq(transcodingJobs.id, "2f7198ff-dcb3-4daa-b66d-3dc822cc5339"));
+  }
+  console.log("Message logged to database:", parsedMessage);
 });
 
 // SQS Polling
@@ -211,6 +184,7 @@ const pollForMessages = async () => {
                     {
                       name: "video-transcoder",
                       environment: [
+                        // {name:"USER_ID", value: videoId},
                         { name: "BUCKET_NAME", value: bucket.name },
                         { name: "KEY", value: key },
                         { name: "VIDEO_ID", value: videoId },

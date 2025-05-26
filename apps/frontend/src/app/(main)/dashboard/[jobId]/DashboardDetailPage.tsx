@@ -16,6 +16,7 @@ import { ChevronRight, Loader2 } from "lucide-react";
 import { JobLog } from "@repo/common/types";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export function DashboardDetailPage({ jobId }: { jobId: string }) {
   console.log("DashboardDetailPage jobId:", jobId);
@@ -90,12 +91,17 @@ export function DashboardDetailPage({ jobId }: { jobId: string }) {
         </div>
 
         <div className="flex border">
-          <div className="w-full max-w-lg h-96 bg-secondary overflow-">
+          <div className="relative w-full max-w-lg h-96 bg-secondary overflow-">
             <video
               src={"singleTranscodingJob.videoUrl"}
-              controls
+              controls={false}
               className="h-full w-full object-cover"
             />
+            <div className="absolute bottom-0 left-0 right-0 bg-primary-foreground/50 h-full w-full p-2 flex items-center justify-center font-mono text-muted-foreground font-semibold">
+              <span>
+                Video Coming Soon...
+              </span>
+            </div>
           </div>
 
           <div className="py-4 px-6 w-full text-sm space-y-3 font-mono">
@@ -151,6 +157,13 @@ const TabSection = ({
   exportData?: { title: string; url: string }[];
 }) => {
   const [activeTab, setActiveTab] = React.useState<"logs" | "export">("logs");
+  const messageRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (messageRef.current) {
+      messageRef.current.scrollTop;
+    }
+  }, [logs, activeTab]);
 
   function logLevelToColor(logLevel: string) {
     switch (logLevel) {
@@ -189,37 +202,36 @@ const TabSection = ({
           Export
         </button>
       </div>
-      <div className="p-4 min-h-96">
+      <ScrollArea className="p-4 h-96">
         {activeTab === "logs" && (
-          <div>
-            <div className="space-y-2 flex flex-col font-mono text-sm">
-              {logs?.length === 0 ? (
-                <span className="text-muted-foreground">
-                  No logs available for this video.
-                </span>
-              ) : (
-                logs?.map((log, index) => (
-                  <span key={index}>
-                    <span
-                      className={`${logLevelToColor(log.logLevel.toUpperCase())}`}
-                    >
-                      [{log.logLevel.toUpperCase()}]{" "}
-                    </span>
-                    <span>
-                      {new Date(log.createdAt).toLocaleString("en-US", {
-                        month: "2-digit",
-                        day: "2-digit",
-                        year: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
-                    </span>{" "}
-                    - {log.logMessage}
+          <div className="space-y-2 flex flex-col font-mono text-sm">
+            {logs?.length === 0 ? (
+              <span className="text-muted-foreground">
+                No logs available for this video.
+              </span>
+            ) : (
+              logs?.map((log, index) => (
+                <span key={index}>
+                  <span
+                    className={`${logLevelToColor(log.logLevel.toUpperCase())}`}
+                  >
+                    [{log.logLevel.toUpperCase()}]{" "}
                   </span>
-                ))
-              )}
-            </div>
+                  <span className="text-muted-foreground">
+                    {new Date(log.createdAt).toLocaleString("en-US", {
+                      month: "2-digit",
+                      day: "2-digit",
+                      year: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    })}
+                  </span>{" "}
+                  - {log.logMessage}
+                </span>
+              ))
+            )}
+            <div ref={messageRef} />
           </div>
         )}
         {activeTab === "export" && (
@@ -245,7 +257,7 @@ const TabSection = ({
             </div>
           </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 };

@@ -1,16 +1,16 @@
 import express, { Router, Request, Response } from "express";
 import { authenticateUser } from "../config/middleware";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { s3Client } from "../config/config";
 import { db } from "@repo/database/client";
 import { jobLogs, transcodingJobs } from "@repo/database/schema";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
-import { desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 
 export const transcodingRouter: Router = Router();
-// transcodingRouter.use(authenticateUser);
+transcodingRouter.use(authenticateUser);
 transcodingRouter.use(express.json());
 
 export const preSignedUrlSchema = z.object({
@@ -45,15 +45,13 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
 
     console.log({
       fileType,
-      videoId,
       resolutions,
       videoDuration,
       videoTitle,
       videoSize,
     });
 
-    // const userId = req.user.id;
-    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
+    const userId = req.user.id;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
@@ -61,6 +59,23 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
     const VideoKey = `uploads/${userId}/${videoId}`;
 
     // KEY MUST BE VIDEOS/USERID/VIDEOID/FILE_NAME
+    const job = await db
+      .insert(transcodingJobs)
+      .values({
+        id: uuid(),
+        userId: userId,
+        inputS3Path: VideoKey,
+        outputS3Path: null, // This will be updated later after transcoding
+        status: "QUEUED",
+        videoDuration,
+        videoId,
+        videoSize,
+        videoTitle,
+        videoType: fileType,
+        resolutions: resolutions,
+        errorMessage: null,
+      })
+      .returning({ id: transcodingJobs.id });
 
     const command = new PutObjectCommand({
       Bucket: process.env.RAW_BUCKET_NAME, // Temporary bucket for uploads
@@ -72,24 +87,6 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
       expiresIn: 3600,
     });
 
-    const job = await db
-      .insert(transcodingJobs)
-      .values({
-        id: uuid(),
-        userId: userId,
-        inputS3Path: VideoKey,
-        outputS3Path: null, // This will be updated later after transcoding
-        status: "PENDING",
-        videoDuration,
-        videoId,
-        videoSize,
-        videoTitle,
-        videoType: fileType,
-        resolutions: resolutions,
-        errorMessage: null,
-      })
-      .returning({ id: transcodingJobs.id });
-
     res.json({ url: signedUrl, method: "PUT", jobId: job[0]?.id });
   } catch (error) {
     console.error("Error generating pre-signed URL:", error);
@@ -99,8 +96,7 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
 
 transcodingRouter.get("/", async (req: Request, res: Response) => {
   try {
-    // const userId = req.user.id;
-    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
+    const userId = req.user.id;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
@@ -128,8 +124,7 @@ transcodingRouter.get("/", async (req: Request, res: Response) => {
 
 transcodingRouter.get("/:id", async (req: Request, res: Response) => {
   try {
-    // const userId = req.user.id;
-    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
+    const userId = req.user.id;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
@@ -149,7 +144,7 @@ transcodingRouter.get("/:id", async (req: Request, res: Response) => {
       .select()
       .from(jobLogs)
       .where(eq(jobLogs.jobId, jobId))
-      .orderBy(desc(jobLogs.createdAt));
+      .orderBy(asc(jobLogs.createdAt));
 
     const jobWithLogs = {
       ...result[0],
@@ -166,8 +161,7 @@ transcodingRouter.get("/:id", async (req: Request, res: Response) => {
 
 transcodingRouter.put("/status/:id", async (req: Request, res: Response) => {
   try {
-    // const userId = req.user.id;
-    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
+    const userId = req.user.id;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
@@ -209,8 +203,7 @@ transcodingRouter.put("/status/:id", async (req: Request, res: Response) => {
 
 transcodingRouter.delete("/:id", async (req: Request, res: Response) => {
   try {
-    // const userId = req.user.id;
-    const userId = "6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA"; //TODO: Remove this hardcoded userId
+    const userId = req.user.id;
     if (!userId) {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
@@ -227,5 +220,46 @@ transcodingRouter.delete("/:id", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("Error deleting transcoding job:", error);
     res.status(500).json({ error: "Failed to delete transcoding job." });
+  }
+});
+
+transcodingRouter.get("/:jobId/download/:resolution", async (req, res) => {
+  try {
+    const { jobId, resolution } = req.params;
+    const userId = req.user.id;
+
+    const job = await db
+      .select()
+      .from(transcodingJobs)
+      .where(
+        and(eq(transcodingJobs.id, jobId), eq(transcodingJobs.userId, userId))
+      )
+      .limit(1);
+
+    if (!job[0] || !job[0].outputS3Path) {
+      res.status(404).json({ error: "Job or output not found" });
+      return;
+    }
+
+    const outputS3Path = JSON.parse(job[0].outputS3Path);
+    const s3Path = outputS3Path[resolution];
+    if (!s3Path) {
+      res.status(404).json({ error: `Resolution ${resolution} not found` });
+      return;
+    }
+
+    const url = await getSignedUrl(
+      s3Client,
+      new GetObjectCommand({
+        Bucket: process.env.FINAL_S3_BUCKET,
+        Key: s3Path.replace(`s3://${process.env.FINAL_S3_BUCKET}/`, ""),
+      }),
+      { expiresIn: 24 * 60 * 60 } // 24 hours
+    );
+
+    res.json({ downloadUrl: url });
+  } catch (error) {
+    console.error("Error generating download URL:", error);
+    res.status(500).json({ error: "Failed to generate download URL" });
   }
 });

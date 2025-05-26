@@ -65,8 +65,8 @@ const init = async () => {
     // Step 1: Download the video from S3
     console.log(`Downloading video from s3://${inputBucket}/${videoKey}...`);
     await publishToRedis({
-      status: "Downloading",
-      message: `Downloading video from s3://${inputBucket}/${videoKey}...`,
+      logLevel: "INFO",
+      message: `Downloading video from Storage: ${videoId}`,
     });
 
     const command = new GetObjectCommand({
@@ -86,8 +86,9 @@ const init = async () => {
     // Step 2: Transcode the video into multiple resolutions
     console.log("Starting transcoding...");
     await publishToRedis({
-      status: "Transcoding",
+      logLevel: "INFO",
       message: "Starting transcoding...",
+      status: "STARTED",
     });
 
     const promises = RESOLUTIONS.map((resolution) => {
@@ -95,6 +96,7 @@ const init = async () => {
 
       // Save in videos/<videoId>/<resolution>.mp4
       const outputKey = `videos/${videoId}/${resolution.name}.mp4`;
+      let lastLoggedPercent = -5;
 
       return new Promise((resolve, reject) => {
         ffmpeg(originalFilePath)
@@ -106,11 +108,18 @@ const init = async () => {
           .on("start", async () => {
             console.log("Transcoding Started for", resolution.name);
           })
-          // .on("progress", (progress) => {
-          //   console.log(
-          //     `Transcoding ${resolution.name}: ${progress.percent}% complete`
-          //   );
-          // })
+          .on("progress", (progress) => {
+            const currentPercent = Math.floor(progress.percent);
+            // Log only if the current percentage is a multiple of 5 and different from the last logged percentage
+            if (currentPercent >= lastLoggedPercent + 5) {
+              console.log(`Transcoding ${resolution.name}: ${currentPercent}% complete`);
+              publishToRedis({
+                logLevel: "INFO",
+                message: `Transcoding ${resolution.name}: ${currentPercent}% complete`,
+              });
+              lastLoggedPercent = currentPercent;
+            }
+          })
           .on("end", async () => {
             try {
               // Step 3: Save the transcoded video to S3 simultaneously
@@ -128,7 +137,7 @@ const init = async () => {
               await s3Client.send(uploadCommand);
 
               await publishToRedis({
-                status: "Transcoding",
+                logLevel: "INFO",
                 message: `Transcoding ${resolution.name} completed`,
               });
 
@@ -147,7 +156,7 @@ const init = async () => {
                 uploadError
               );
               await publishToRedis({
-                status: "Transcoding",
+                logLevel: "ERROR",
                 message: `Failed to upload ${resolution.name}`,
               });
               reject(uploadError);
@@ -156,7 +165,7 @@ const init = async () => {
           .on("error", async (err) => {
             console.error(`Transcoding failed for ${resolution.name}:`, err);
             await publishToRedis({
-              status: "Transcoding",
+              logLevel: "ERROR",
               message: `Transcoding failed for ${resolution.name}`,
             });
             reject(err);
@@ -167,8 +176,9 @@ const init = async () => {
 
     const outputKeys = await Promise.all(promises);
     await publishToRedis({
-      status: "Transcoding",
-      message: `Transcoding complete. Output keys: ${outputKeys.join(", ")}`,
+      logLevel: "INFO",
+      message: `Transcoding completed`,
+      status: "COMPLETED",
     });
     console.log("Transcoding complete. Output keys:", outputKeys);
 
