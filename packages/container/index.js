@@ -79,7 +79,7 @@ const init = async () => {
     console.log(`Downloading video from s3://${inputBucket}/${videoKey}...`);
     await publishToRedis({
       logLevel: "INFO",
-      message: `Downloading video from Storage: ${videoId}`,
+      logMessage: `Downloading video from Storage: ${videoId}`,
       videoId,
     });
 
@@ -101,7 +101,7 @@ const init = async () => {
     console.log("Starting transcoding...");
     await publishToRedis({
       logLevel: "INFO",
-      message: "Starting transcoding...",
+      logMessage: "Starting transcoding...",
       status: "STARTED",
       videoId,
     });
@@ -130,7 +130,7 @@ const init = async () => {
               console.log(`Transcoding ${resolution.name}: ${currentPercent}% complete`);
               publishToRedis({
                 logLevel: "INFO",
-                message: `Transcoding ${resolution.name}: ${currentPercent}% complete`,
+                logMessage: `Transcoding ${resolution.name}: ${currentPercent}% complete`,
                 videoId,
               });
               lastLoggedPercent = currentPercent;
@@ -154,7 +154,7 @@ const init = async () => {
 
               await publishToRedis({
                 logLevel: "INFO",
-                message: `Transcoding ${resolution.name} completed`,
+                logMessage: `Transcoding ${resolution.name} completed`,
                 videoId,
               });
 
@@ -174,7 +174,7 @@ const init = async () => {
               );
               await publishToRedis({
                 logLevel: "ERROR",
-                message: `Failed to upload ${resolution.name}`,
+                logMessage: `Failed to upload ${resolution.name}`,
                 videoId,
               });
               reject(uploadError);
@@ -184,7 +184,7 @@ const init = async () => {
             console.error(`Transcoding failed for ${resolution.name}:`, err);
             await publishToRedis({
               logLevel: "ERROR",
-              message: `Transcoding failed for ${resolution.name}`,
+              logMessage: `Transcoding failed for ${resolution.name}`,
               videoId,
             });
             reject(err);
@@ -200,7 +200,7 @@ const init = async () => {
     console.log("Transcoding complete. Output keys:", outputKeys);
     await publishToRedis({
       logLevel: "INFO",
-      message: `Transcoding completed`,
+      logMessage: `Transcoding completed`,
       status: "COMPLETED",
       videoId,
       outputKeys : JSON.stringify(outputKeys),
@@ -212,10 +212,8 @@ const init = async () => {
     console.log(`Cleaned up original file: ${originalFilePath}`);
   } catch (error) {
     console.error("Error in transcoding process:", error);
-    // Clean up if the original file exists
     if (originalFilePath) {
       try {
-        // Attempt to remove the original file if it exists
         await fs.unlink(originalFilePath);
         console.log(`Cleaned up original file on error: ${originalFilePath}`);
       } catch (cleanupError) {

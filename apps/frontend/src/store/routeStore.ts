@@ -4,7 +4,7 @@ import { BACKEND_URL } from "@/config";
 import axios from "axios";
 import { toast } from "sonner";
 
-interface singleTranscodingJobState extends TranscodingJob {
+export interface singleTranscodingJobState extends TranscodingJob {
   logs: JobLog[];
 };
 
@@ -33,7 +33,6 @@ export const useRouteStore = create<RouteState>((set) => ({
         throw new Error("Failed to fetch transcoding jobs");
       }
       const data: TranscodingJob[] = response.data;
-      console.log("Fetched transcoding jobs:", data);
 
       set({ transcodingJobs: data });
     } catch (error) {
@@ -59,7 +58,6 @@ export const useRouteStore = create<RouteState>((set) => ({
         throw new Error("Failed to fetch single transcoding job");
       }
       const data: singleTranscodingJobState = response.data;
-      console.log("Fetched single transcoding job:", data);
 
       set({ singleTranscodingJob: data });
     } catch (error) {

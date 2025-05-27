@@ -13,13 +13,22 @@ import { userRouter } from "./routes/user.route";
 import { transcodingRouter } from "./routes/transcoding.route";
 import { db } from "@repo/database/client";
 import { jobLogs, transcodingJobs } from "@repo/database/schema";
+import { Server as SocketIOServer } from "socket.io";
+import { Server } from "http";
 import { v4 as uuid } from "uuid";
 import { eq } from "drizzle-orm";
 
-dotenv.config({
-  override: true,
-});
+dotenv.config({ override: true });
+
 const app = express();
+const httpServer = new Server(app);
+const io = new SocketIOServer(httpServer, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || "http://localhost:3000",
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
 
 app.use(
   cors({
@@ -46,32 +55,74 @@ redisClient.on("message", async (channel, message) => {
   console.log(`Received message from channel ${channel}:`, message);
 
   const parsedMessage = JSON.parse(message);
+  const {
+    videoId,
+    status,
+    logMessage,
+    logLevel,
+    outputKeys,
+    duration,
+  } = parsedMessage;
+
+  console.log("Parsed",parsedMessage);
+  
+
   await db.insert(jobLogs).values({
     id: uuid(),
-    jobId: parsedMessage.videoId,
-    logMessage: parsedMessage.message,
-    logLevel: parsedMessage.logLevel,
+    jobId: videoId,
+    logMessage,
+    logLevel,
+    createdAt: new Date(),
   });
 
-  if (parsedMessage.status === "STARTED") {
+  if (status === "STARTED") {
     await db
       .update(transcodingJobs)
       .set({
         status: "PROCESSING",
       })
-      .where(eq(transcodingJobs.id, parsedMessage.videoId));
+      .where(eq(transcodingJobs.id, videoId));
   }
-  if (parsedMessage.status === "COMPLETED") {
+  if (status === "COMPLETED") {
     await db
       .update(transcodingJobs)
       .set({
         status: "COMPLETED",
-        outputS3Keys: parsedMessage.outputKeys,
-        completeDuration: parsedMessage.duration,
+        outputS3Keys: outputKeys,
+        completeDuration: duration,
+        updatedAt: new Date(),
       })
-      .where(eq(transcodingJobs.id, parsedMessage.videoId));
+      .where(eq(transcodingJobs.id, videoId));
   }
-  console.log("Message logged to database:", parsedMessage);
+  io.to(`job:${videoId}`).emit("log", parsedMessage);
+  console.log("Log emitted to WebSocket clients for videoId:", videoId);
+});
+
+io.on("connection", (socket) => {
+  console.log("New WebSocket connection:", socket.id);
+  // Join a room based on jobId
+  socket.on("SubscribeToJob", (jobId) => {
+    if (!jobId) {
+      console.error("No jobId provided for subscription");
+      return;
+    }
+    console.log(`Socket ${socket.id} subscribed to job: ${JSON.stringify(jobId)}`);
+    socket.join(`job:${jobId}`);
+  });
+
+  socket.on("UnsubscribeFromJob", (jobId) => {
+    if (!jobId) {
+      console.error("No jobId provided for unsubscription");
+      return;
+    }
+    console.log(`Socket ${socket.id} unsubscribed from job: ${jobId}`);
+    socket.leave(`job:${jobId}`);
+  });
+
+  // Handle disconnection
+  socket.on("disconnect", () => {
+    console.log("WebSocket disconnected:", socket.id);
+  });
 });
 
 // SQS Polling
@@ -209,7 +260,10 @@ const pollForMessages = async () => {
                         { name: "BUCKET_NAME", value: bucket.name },
                         { name: "KEY", value: key },
                         { name: "VIDEO_ID", value: videoId },
-                        { name: "RESOLUTIONS", value: JSON.stringify(resolutions) },
+                        {
+                          name: "RESOLUTIONS",
+                          value: JSON.stringify(resolutions),
+                        },
                         {
                           name: "FINAL_BUCKET_NAME",
                           value: process.env.FINAL_BUCKET_NAME,
@@ -261,7 +315,7 @@ const pollForMessages = async () => {
 
 // Start server
 const PORT = process.env.PORT || 8000;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   // pollForMessages();
 });
