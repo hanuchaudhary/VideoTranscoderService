@@ -279,8 +279,14 @@ transcodingRouter.get(
         dateLessThan: new Date(Date.now() + 60 * 60 * 1000), // 1 hour expiration
       });
 
-      console.log("Generated signed URL:", signedUrl);
+      await db.insert(jobLogs).values({
+        id: uuid(),
+        jobId,
+        logMessage: `User ${userId} downloaded ${resolutionKey} video`,
+        logLevel: "INFO",
+      });
 
+      console.log("Generated signed URL:", signedUrl);
       res.json({ downloadUrl: signedUrl });
       return;
     } catch (error) {

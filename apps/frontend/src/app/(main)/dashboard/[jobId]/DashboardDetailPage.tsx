@@ -219,6 +219,7 @@ const TabSection = ({
     if (downloadUrl) {
       const link = document.createElement("a");
       link.href = downloadUrl;
+      link.target = "_blank";
       link.download = resolutionKey.split("/").pop() || "video.mp4";
       document.body.appendChild(link);
       link.click();
@@ -253,7 +254,7 @@ const TabSection = ({
           Export
         </button>
       </div>
-      <ScrollArea className="p-4 h-96">
+      <ScrollArea ref={messageRef} className="p-4 h-96">
         {activeTab === "logs" && (
           <div className="space-y-2 flex flex-col font-mono text-sm">
             {logs?.length === 0 ? (
@@ -282,7 +283,6 @@ const TabSection = ({
                 </span>
               ))
             )}
-            <div ref={messageRef} />
           </div>
         )}
         {activeTab === "export" && (
