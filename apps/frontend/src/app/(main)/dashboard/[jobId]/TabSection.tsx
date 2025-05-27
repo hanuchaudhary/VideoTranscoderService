@@ -13,17 +13,6 @@ import { io, type Socket } from "socket.io-client";
 import { toast } from "sonner";
 import { JobLog, JobStatus } from "@repo/common/types";
 
-interface SocketLog {
-  logLevel: string;
-  logMessage: string;
-  createdAt: string;
-  jobId?: string;
-  videoId?: string;
-  status?: string;
-  duration?: string;
-  outputKeys?: string;
-}
-
 interface Mergelogs extends JobLog {
   videoId?: string;
   status?: string;
