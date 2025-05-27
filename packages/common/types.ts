@@ -65,8 +65,8 @@ export interface Account extends Timestamps {
 export interface TranscodingJob extends Timestamps {
   id: string;
   userId: string;
-  inputS3Path: string;
-  outputS3Path?: string | null;
+  inputS3Key: string;
+  outputS3Keys?: string;
   status: JobStatus;
   videoId: string;
   videoTitle: string;
@@ -74,6 +74,7 @@ export interface TranscodingJob extends Timestamps {
   videoSize: string;
   videoType: string;
   resolutions: string[];
+  completeDuration?: string;
   errorMessage?: string | null;
 }
 

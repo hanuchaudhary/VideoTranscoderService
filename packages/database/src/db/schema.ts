@@ -80,8 +80,8 @@ export const transcodingJobs = pgTable("transcoding_jobs", {
   userId: text()
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
-  inputS3Path: varchar().notNull(),
-  outputS3Path: varchar(),
+  inputS3Key: text().notNull(),
+  outputS3Keys: text().notNull(), // `["key1", "key2"]`
   status: jobStatusEnum(),
   videoId: text().notNull(),
   videoTitle: text().notNull(),
@@ -89,6 +89,7 @@ export const transcodingJobs = pgTable("transcoding_jobs", {
   videoSize: text().notNull(),
   videoType: text().notNull(),
   resolutions: json().notNull(),
+  completeDuration: text(),
   errorMessage: text(),
   ...timestamps,
 });

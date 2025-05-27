@@ -22,6 +22,7 @@ export const preSignedUrlSchema = z.object({
   videoSize: z.string().min(1, "Video size is required"),
 });
 
+// Endpoint to generate pre-signed URL for video upload
 transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
   try {
     const parsedData = preSignedUrlSchema.safeParse(req.body);
@@ -56,7 +57,6 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
       res.status(401).json({ error: "Unauthorized: User ID is required" });
       return;
     }
-    const VideoKey = `uploads/${userId}/${videoId}`;
 
     // KEY MUST BE VIDEOS/USERID/VIDEOID/FILE_NAME
     const job = await db
@@ -64,8 +64,8 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
       .values({
         id: uuid(),
         userId: userId,
-        inputS3Path: VideoKey,
-        outputS3Path: null, // This will be updated later after transcoding
+        inputS3Key: "",
+        outputS3Keys: "", // This will be updated later after transcoding
         status: "QUEUED",
         videoDuration,
         videoId,
@@ -76,6 +76,8 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
         errorMessage: null,
       })
       .returning({ id: transcodingJobs.id });
+
+    const VideoKey = `uploads/${userId}/${job[0]?.id}/video.${fileType.split("/")[1]}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.RAW_BUCKET_NAME, // Temporary bucket for uploads
@@ -94,6 +96,7 @@ transcodingRouter.post("/preSignedUrl", async (req: Request, res: Response) => {
   }
 });
 
+// Endpoint to fetch all transcoding jobs
 transcodingRouter.get("/", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
@@ -122,6 +125,7 @@ transcodingRouter.get("/", async (req: Request, res: Response) => {
   }
 });
 
+// Endpoint to fetch a specific transcoding job by ID
 transcodingRouter.get("/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
@@ -159,6 +163,7 @@ transcodingRouter.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Endpoint to update the status of a transcoding job
 transcodingRouter.put("/status/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
@@ -173,7 +178,7 @@ transcodingRouter.put("/status/:id", async (req: Request, res: Response) => {
       return;
     }
 
-    const { status, outputS3Path, errorMessage } = req.body;
+    const { status, errorMessage } = req.body;
 
     if (
       !status ||
@@ -189,7 +194,6 @@ transcodingRouter.put("/status/:id", async (req: Request, res: Response) => {
       .update(transcodingJobs)
       .set({
         status,
-        outputS3Path: outputS3Path || null,
         errorMessage: errorMessage || null,
       })
       .where(eq(transcodingJobs.id, jobId));
@@ -201,6 +205,7 @@ transcodingRouter.put("/status/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Endpoint to delete a transcoding job
 transcodingRouter.delete("/:id", async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
@@ -223,36 +228,46 @@ transcodingRouter.delete("/:id", async (req: Request, res: Response) => {
   }
 });
 
-transcodingRouter.get("/:jobId/download/:resolution", async (req, res) => {
+// Endpoint to download a specific resolution of a transcoding job
+transcodingRouter.get("/:jobId/download/:resolutionKey", async (req, res) => {
   try {
-    const { jobId, resolution } = req.params;
+    const { jobId, resolutionKey } = req.params;
     const userId = req.user.id;
 
+    if (!userId) {
+      res.status(401).json({ error: "Unauthorized: User ID is required" });
+      return;
+    }
+
+    if (!jobId || !resolutionKey) {
+      res.status(400).json({ error: "Job ID and resolution key are required" });
+      return;
+    }
+
+    // Validate the job exists and belongs to the user
     const job = await db
       .select()
       .from(transcodingJobs)
       .where(
         and(eq(transcodingJobs.id, jobId), eq(transcodingJobs.userId, userId))
-      )
-      .limit(1);
-
-    if (!job[0] || !job[0].outputS3Path) {
-      res.status(404).json({ error: "Job or output not found" });
+      );
+    if (job.length === 0) {
+      res.status(404).json({ error: "Transcoding job not found." });
       return;
     }
 
-    const outputS3Path = JSON.parse(job[0].outputS3Path);
-    const s3Path = outputS3Path[resolution];
-    if (!s3Path) {
-      res.status(404).json({ error: `Resolution ${resolution} not found` });
-      return;
-    }
+    // Output S3 keys look like
+    //    [
+    //   'videos/f8286d09-dc37-49ca-9245-7c94a20a37e0/144p.mp4',
+    //   'videos/f8286d09-dc37-49ca-9245-7c94a20a37e0/240p.mp4',
+    //   'videos/f8286d09-dc37-49ca-9245-7c94a20a37e0/360p.mp4'
+    //    ]
 
     const url = await getSignedUrl(
       s3Client,
       new GetObjectCommand({
         Bucket: process.env.FINAL_S3_BUCKET,
-        Key: s3Path.replace(`s3://${process.env.FINAL_S3_BUCKET}/`, ""),
+        Key: resolutionKey,
       }),
       { expiresIn: 24 * 60 * 60 } // 24 hours
     );

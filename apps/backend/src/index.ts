@@ -48,7 +48,7 @@ redisClient.on("message", async (channel, message) => {
   const parsedMessage = JSON.parse(message);
   await db.insert(jobLogs).values({
     id: uuid(),
-    jobId: "2f7198ff-dcb3-4daa-b66d-3dc822cc5339",
+    jobId: parsedMessage.videoId,
     logMessage: parsedMessage.message,
     logLevel: parsedMessage.logLevel,
   });
@@ -57,18 +57,19 @@ redisClient.on("message", async (channel, message) => {
     await db
       .update(transcodingJobs)
       .set({
-        status :"PROCESSING",
+        status: "PROCESSING",
       })
-      .where(eq(transcodingJobs.id, "2f7198ff-dcb3-4daa-b66d-3dc822cc5339"));
+      .where(eq(transcodingJobs.id, parsedMessage.videoId));
   }
   if (parsedMessage.status === "COMPLETED") {
     await db
       .update(transcodingJobs)
       .set({
         status: "COMPLETED",
-        outputS3Path: parsedMessage.outputS3Path,
+        outputS3Keys: parsedMessage.outputKeys,
+        completeDuration: parsedMessage.duration,
       })
-      .where(eq(transcodingJobs.id, "2f7198ff-dcb3-4daa-b66d-3dc822cc5339"));
+      .where(eq(transcodingJobs.id, parsedMessage.videoId));
   }
   console.log("Message logged to database:", parsedMessage);
 });
@@ -125,7 +126,7 @@ const pollForMessages = async () => {
           //           arn: "arn:aws:s3:::raw-transcoder-videos",
           //         },
           //         object: {
-          //           key: "ZENITSU.webm",
+          //           key: "uploads/6XE1PDLeOq7eQJUGYorGsFf5G6Xl6IiA/f8286d09-dc37-49ca-9245-7c94a20a37e0/video.mp4",
           //           size: 50248332,
           //           eTag: "97b818b70a0d3d2936d9580de65c2e2c-3",
           //           sequencer: "006830B4C79941E3D6",
@@ -158,13 +159,33 @@ const pollForMessages = async () => {
               object: { key },
             } = s3;
 
-            // Extract videoId from the S3 key (e.g., videos/<videoId>/original.mp4)
-            const videoIdMatch = key.match(/videos\/([^/]+)\//);
+            // Extract videoId from the S3 key (e.g., uploads/UserId/VideoId/video.mp4)
+            const videoIdMatch = key.match(
+              /uploads\/([a-zA-Z0-9-]+)\/video\.mp4/
+            ); // gives videoId
             if (!videoIdMatch) {
               console.error(`Invalid S3 key format: ${key}`);
               continue;
             }
-            const videoId = videoIdMatch[1];
+            const videoId = videoIdMatch[2];
+            console.log("Video ID extracted from S3 key:", videoId);
+
+            const job = await db
+              .select()
+              .from(transcodingJobs)
+              .where(eq(transcodingJobs.id, videoId!))
+              .limit(1);
+
+            if (!job[0]) {
+              console.error(`No transcoding job found for videoId: ${videoId}`);
+              continue;
+            }
+
+            const resolutions = job[0].resolutions; // e.g., ["720p", "1080p"]
+            if (!resolutions || !Array.isArray(resolutions)) {
+              console.error(`Invalid resolutions for videoId: ${videoId}`);
+              continue;
+            }
 
             // Trigger ECS task for transcoding
             try {
@@ -188,6 +209,7 @@ const pollForMessages = async () => {
                         { name: "BUCKET_NAME", value: bucket.name },
                         { name: "KEY", value: key },
                         { name: "VIDEO_ID", value: videoId },
+                        { name: "RESOLUTIONS", value: JSON.stringify(resolutions) },
                         {
                           name: "FINAL_BUCKET_NAME",
                           value: process.env.FINAL_BUCKET_NAME,

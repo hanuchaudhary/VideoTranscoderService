@@ -31,8 +31,12 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION || "ap-south-1",
 });
 
+const USER_RESOLUTIONS = JSON.parse(process.env.RESOLUTIONS || "[]"); // e.g., ["720p", "1080p"]
+console.log(`Using user-defined resolutions: ${USER_RESOLUTIONS}`);
+
+
 // Resolutions for transcoding TODO: Add more resolutions like 4K, 8K, 240p etc. ✅
-const RESOLUTIONS = [
+const RESOLUTION_MAP  = [
   { name: "144p", width: 256, height: 144 },
   { name: "240p", width: 426, height: 240 },
   { name: "360p", width: 640, height: 360 },
@@ -42,6 +46,13 @@ const RESOLUTIONS = [
   { name: "1440p", width: 2560, height: 1440 },
   { name: "4K", width: 3840, height: 2160 },
 ];
+
+const RESOLUTIONS = USER_RESOLUTIONS
+  .map((res) => RESOLUTION_MAP.find(r => r.name === res))
+  .filter(Boolean);
+
+console.log(`Using resolutions: ${RESOLUTIONS}`);
+
 
 const init = async () => {
   // Validate environment variables
@@ -63,10 +74,13 @@ const init = async () => {
 
   try {
     // Step 1: Download the video from S3
+    const startTime = new Date();
+    console.log(`Transcoding started at ${startTime}`);
     console.log(`Downloading video from s3://${inputBucket}/${videoKey}...`);
     await publishToRedis({
       logLevel: "INFO",
       message: `Downloading video from Storage: ${videoId}`,
+      videoId,
     });
 
     const command = new GetObjectCommand({
@@ -89,6 +103,7 @@ const init = async () => {
       logLevel: "INFO",
       message: "Starting transcoding...",
       status: "STARTED",
+      videoId,
     });
 
     const promises = RESOLUTIONS.map((resolution) => {
@@ -116,6 +131,7 @@ const init = async () => {
               publishToRedis({
                 logLevel: "INFO",
                 message: `Transcoding ${resolution.name}: ${currentPercent}% complete`,
+                videoId,
               });
               lastLoggedPercent = currentPercent;
             }
@@ -139,6 +155,7 @@ const init = async () => {
               await publishToRedis({
                 logLevel: "INFO",
                 message: `Transcoding ${resolution.name} completed`,
+                videoId,
               });
 
               console.log(
@@ -158,6 +175,7 @@ const init = async () => {
               await publishToRedis({
                 logLevel: "ERROR",
                 message: `Failed to upload ${resolution.name}`,
+                videoId,
               });
               reject(uploadError);
             }
@@ -167,6 +185,7 @@ const init = async () => {
             await publishToRedis({
               logLevel: "ERROR",
               message: `Transcoding failed for ${resolution.name}`,
+              videoId,
             });
             reject(err);
           })
@@ -175,12 +194,18 @@ const init = async () => {
     });
 
     const outputKeys = await Promise.all(promises);
+    const endTime = new Date();
+    const duration = (endTime - startTime) / 1000; // in seconds
+    console.log(`Transcoding completed in ${duration} seconds`);
+    console.log("Transcoding complete. Output keys:", outputKeys);
     await publishToRedis({
       logLevel: "INFO",
       message: `Transcoding completed`,
       status: "COMPLETED",
+      videoId,
+      outputKeys : JSON.stringify(outputKeys),
+      duration : `${duration.toFixed(2)} seconds`,
     });
-    console.log("Transcoding complete. Output keys:", outputKeys);
 
     // Remove the original file after transcoding
     await fs.unlink(originalFilePath);

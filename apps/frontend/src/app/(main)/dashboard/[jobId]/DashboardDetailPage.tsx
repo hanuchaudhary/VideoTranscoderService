@@ -3,14 +3,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { useRouteStore } from "@/store/routeStore";
 import { ChevronRight, Loader2 } from "lucide-react";
 import { JobLog } from "@repo/common/types";
