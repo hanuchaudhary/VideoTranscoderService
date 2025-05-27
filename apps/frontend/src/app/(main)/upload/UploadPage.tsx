@@ -80,7 +80,7 @@ export function UploadPage() {
       (q) => q.value === inputQuality
     );
     const qualityIndex = VIDEO_QUALITIES.findIndex((q) => q.value === quality);
-    return qualityIndex >= inputQualityIndex; // Higher qualities and 
+    return qualityIndex >= inputQualityIndex; // Higher qualities and
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +106,7 @@ export function UploadPage() {
       </div>
 
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold">
+        <h1 className="md:text-2xl text-xl font-semibold">
           Ready to transcode your videos?
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -131,42 +131,48 @@ export function UploadPage() {
       >
         <div className="w-full">
           {!videoPreview ? (
-            <div
-              {...getRootProps()}
-              className={`h-80 w-full border-2 transition-colors relative ${
-                isDragActive
-                  ? "border-blue-600 bg-primary/5"
-                  : "border-border bg-secondary/30"
-              } cursor-pointer flex flex-col items-center justify-center p-6`}
-            >
+            <div {...getRootProps()}>
               <input {...getInputProps()} />
 
-              <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-center text-muted-foreground mb-2">
-                {isDragActive
-                  ? "Drop your video file here"
-                  : "Drag and drop your MP4 video file here"}
-              </p>
-              <p className="text-xs text-muted-foreground mb-4">
-                Only MP4 format supported, max 100MB
-              </p>
-
-              <input
-                type="file"
-                onChange={handleFileChange}
-                multiple
-                accept="image/jpeg,image/png,image/gif,video/mp4"
-                className="hidden"
-                disabled={isUploadingMedia}
-              />
-              <Button
-                type="button"
-                variant="box"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={videoLoading}
+              <div
+                className={`relative z-20 flex flex-col items-center justify-center h-80 border-2 dark:border-border border-neutral-300/50 font-mono ${
+                  isDragActive
+                    ? "border-blue-600 bg-primary/5"
+                    : "border-border bg-secondary/30"
+                } cursor-pointer p-6`}
               >
-                Select Video File
-              </Button>
+                <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+                <p className="text-center text-muted-foreground mb-2">
+                  {isDragActive
+                    ? "Drop your video file here"
+                    : "Drag and drop your MP4 video file here"}
+                </p>
+                <p className="text-xs text-center text-muted-foreground mb-4">
+                  Only MP4 format supported, max 100MB
+                </p>
+
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  multiple
+                  accept="image/jpeg,image/png,image/gif,video/mp4"
+                  className="hidden"
+                  disabled={isUploadingMedia}
+                />
+                <Button
+                  type="button"
+                  variant="box"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={videoLoading}
+                >
+                  Select Video File
+                </Button>
+              </div>
+              <div className="flex flex-col items-end absolute -right-60 -bottom-80 blur-xl z-0 ">
+                <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-purple-600 to-sky-600"></div>
+                <div className="h-[10rem] rounded-full w-[90rem] z-1 bg-gradient-to-b blur-[6rem] from-pink-900 to-yellow-400"></div>
+                <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-yellow-600 to-sky-500"></div>
+              </div>
             </div>
           ) : !videoLoading ? (
             <div>

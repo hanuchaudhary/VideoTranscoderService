@@ -8,7 +8,7 @@ export function DashboardPage() {
   const { data } = authClient.useSession();
   return (
     <div>
-      <div className="border-b my-3">
+      <div className="border-b my-3 font-mono">
         <h1 className="font-semibold text-2xl leading-none">Dashboard</h1>
         <p className=" pb-3 text-muted-foreground">{data?.user.name}</p>
       </div>

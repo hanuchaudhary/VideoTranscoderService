@@ -168,7 +168,7 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
           Export
         </button>
       </div>
-      <ScrollArea className="p-4 h-96">
+      <ScrollArea className="p-4 h-96 bg-secondary/30 backdrop-blur-sm">
         <div ref={scrollRef} className="space-y-2">
           {activeTab === "logs" && (
             <div className="space-y-2 flex flex-col font-mono text-sm">

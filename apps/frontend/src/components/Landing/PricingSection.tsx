@@ -87,8 +87,10 @@ export function PricingSection() {
   ];
 
   return (
-    <section className="border-b">
-      <div className="border-b">
+    <section className="border-b relative overflow-hidden">
+      <div className="absolute inset-0 z-0 bg-noise opacity-30"></div>
+
+      <div className="border-b relative z-10">
         <div className="md:h-20 h-14 grid grid-cols-10 w-full">
           {[...Array(10)].map((_, i) => (
             <div
@@ -116,7 +118,7 @@ export function PricingSection() {
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3">
+      <div className="grid md:grid-cols-3 relative z-10">
         {pricingPlans.map((plan, index) => (
           <div
             key={index}

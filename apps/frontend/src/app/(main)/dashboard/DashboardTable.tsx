@@ -4,10 +4,8 @@ import { useRouteStore } from "@/store/routeStore"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import React from "react"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Upload, Video } from "lucide-react"
 
 export function DashboardTable() {
   const { fetchTranscodingJobs, transcodingJobs } = useRouteStore()
@@ -70,8 +68,8 @@ export function DashboardTable() {
   const EmptyState = () => (
     <div className="flex items-center justify-center min-h-[60vh]">
       <Card className="w-full rounded-none shadow-none border-none bg-transparent">
-        <CardContent className="flex flex-col items-center justify-center p-8 text-center">
-          <h3 className="text-xl font-semibold mb-2">No assets yet</h3>
+        <CardContent className="flex flex-col font-mono items-center justify-center p-8 text-center">
+          <h3 className="text-2xl font-semibold mb-2">No assets yet</h3>
           <p className="text-muted-foreground mb-6 text-sm leading-relaxed">
             Get started by uploading your first video asset. You can transcode, optimize, and manage all your media
             files from here.

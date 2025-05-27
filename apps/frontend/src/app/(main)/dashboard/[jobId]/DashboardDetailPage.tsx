@@ -40,8 +40,8 @@ export function DashboardDetailPage({ jobId }: { jobId: string }) {
 
   if (!singleTranscodingJob) {
     return (
-      <section className="p-6 space-y-6">
-        <div className="flex items-center justify-center min-h-96">
+      <section className="p-6 space-y-6 relative h-[calc(100vh-6rem)]">
+        <div className="flex items-center font-mono text-2xl justify-center min-h-96">
           <p>Asset not found</p>
         </div>
       </section>
@@ -49,9 +49,9 @@ export function DashboardDetailPage({ jobId }: { jobId: string }) {
   }
 
   return (
-    <section className="p-6 space-y-6">
+    <section className="p-6 space-y-6 max-w-7xl mx-auto relative z-10">
       <div>
-        <div className="flex items-center mb-4 text-xs select-none">
+        <div className="flex items-center mb-4 text-xs select-none ">
           <Link
             className="hover:text-foreground text-muted-foreground transition-colors border-b border-primary/70 hover:border-primary leading-4 uppercase"
             href={`/dashboard`}
@@ -141,7 +141,6 @@ export function DashboardDetailPage({ jobId }: { jobId: string }) {
     </section>
   );
 }
-
 
 function Info({ label, value }: { label: string; value: React.ReactNode }) {
   return (
