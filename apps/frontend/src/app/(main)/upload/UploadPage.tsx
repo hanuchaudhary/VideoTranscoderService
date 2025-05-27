@@ -80,7 +80,7 @@ export function UploadPage() {
       (q) => q.value === inputQuality
     );
     const qualityIndex = VIDEO_QUALITIES.findIndex((q) => q.value === quality);
-    return qualityIndex > inputQualityIndex;
+    return qualityIndex >= inputQualityIndex; // Higher qualities and 
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

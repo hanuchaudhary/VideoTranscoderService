@@ -1,13 +1,14 @@
 import express, { Router, Request, Response } from "express";
 import { authenticateUser } from "../config/middleware";
-import { GetObjectCommand, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl as cloudfrontGetSignedUrl } from "@aws-sdk/cloudfront-signer";
 import { s3Client } from "../config/config";
 import { db } from "@repo/database/client";
 import { jobLogs, transcodingJobs } from "@repo/database/schema";
 import { v4 as uuid } from "uuid";
 import { z } from "zod";
 import { and, asc, desc, eq } from "drizzle-orm";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const transcodingRouter: Router = Router();
 transcodingRouter.use(authenticateUser);
@@ -229,52 +230,62 @@ transcodingRouter.delete("/:id", async (req: Request, res: Response) => {
 });
 
 // Endpoint to download a specific resolution of a transcoding job
-transcodingRouter.get("/:jobId/download/:resolutionKey", async (req, res) => {
-  try {
-    const { jobId, resolutionKey } = req.params;
-    const userId = req.user.id;
+transcodingRouter.get(
+  "/download/:jobId",
+  async (req: Request, res: Response) => {
+    try {
+      const { jobId } = req.params;
+      const { resolutionKey } = req.query;
+      const userId = req.user.id;
 
-    if (!userId) {
-      res.status(401).json({ error: "Unauthorized: User ID is required" });
-      return;
-    }
+      if (!userId) {
+        res.status(401).json({ error: "Unauthorized: User ID is required" });
+        return;
+      }
 
-    if (!jobId || !resolutionKey) {
-      res.status(400).json({ error: "Job ID and resolution key are required" });
-      return;
-    }
+      if (!jobId || !resolutionKey) {
+        res
+          .status(400)
+          .json({ error: "Job ID and resolution key are required" });
+        return;
+      }
 
-    // Validate the job exists and belongs to the user
-    const job = await db
-      .select()
-      .from(transcodingJobs)
-      .where(
-        and(eq(transcodingJobs.id, jobId), eq(transcodingJobs.userId, userId))
+      // Check job ownership
+      const job = await db
+        .select()
+        .from(transcodingJobs)
+        .where(
+          and(eq(transcodingJobs.id, jobId), eq(transcodingJobs.userId, userId))
+        );
+      if (job.length === 0) {
+        res.status(404).json({ error: "Transcoding job not found." });
+        return;
+      }
+
+      const cloudfrontDomain = process.env.CLOUDFRONT_DISTRIBUTION_DOMAIN;
+      const resourceUrl = `${cloudfrontDomain}/${resolutionKey}`;
+      const privateKey = process.env.CLOUDFRONT_PRIVATE_KEY!.replace(
+        /\\n/g,
+        "\n"
       );
-    if (job.length === 0) {
-      res.status(404).json({ error: "Transcoding job not found." });
+      const keyPairId = process.env.CLOUDFRONT_KEY_PAIR_ID!;
+
+      // Generate signed URL
+      const signedUrl = cloudfrontGetSignedUrl({
+        keyPairId,
+        privateKey,
+        url: resourceUrl,
+        dateGreaterThan: new Date(Date.now() - 1000), // Allow some leeway
+        dateLessThan: new Date(Date.now() + 60 * 60 * 1000), // 1 hour expiration
+      });
+
+      console.log("Generated signed URL:", signedUrl);
+
+      res.json({ downloadUrl: signedUrl });
       return;
+    } catch (error) {
+      console.error("Error generating download URL:", error);
+      res.status(500).json({ error: "Failed to generate download URL" });
     }
-
-    // Output S3 keys look like
-    //    [
-    //   'videos/f8286d09-dc37-49ca-9245-7c94a20a37e0/144p.mp4',
-    //   'videos/f8286d09-dc37-49ca-9245-7c94a20a37e0/240p.mp4',
-    //   'videos/f8286d09-dc37-49ca-9245-7c94a20a37e0/360p.mp4'
-    //    ]
-
-    const url = await getSignedUrl(
-      s3Client,
-      new GetObjectCommand({
-        Bucket: process.env.FINAL_S3_BUCKET,
-        Key: resolutionKey,
-      }),
-      { expiresIn: 24 * 60 * 60 } // 24 hours
-    );
-
-    res.json({ downloadUrl: url });
-  } catch (error) {
-    console.error("Error generating download URL:", error);
-    res.status(500).json({ error: "Failed to generate download URL" });
   }
-});
+);

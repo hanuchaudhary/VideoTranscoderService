@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { JobLog, TranscodingJob } from "@repo/common/types";
 import { BACKEND_URL } from "@/config";
 import axios from "axios";
+import { toast } from "sonner";
 
 interface singleTranscodingJobState extends TranscodingJob {
   logs: JobLog[];
