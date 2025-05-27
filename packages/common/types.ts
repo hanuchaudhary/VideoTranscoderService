@@ -84,5 +84,5 @@ export interface JobLog {
   jobId: string;
   logMessage: string;
   logLevel: LogLevel;
-  createdAt: Date;
+  createdAt: string;
 }

@@ -2,7 +2,6 @@ import { create } from "zustand";
 import type { JobLog, TranscodingJob } from "@repo/common/types";
 import { BACKEND_URL } from "@/config";
 import axios from "axios";
-import { toast } from "sonner";
 
 export interface singleTranscodingJobState extends TranscodingJob {
   logs: JobLog[];
@@ -12,6 +11,7 @@ type RouteState = {
   fetchTranscodingJobs: () => void;
   transcodingJobs: TranscodingJob[];
 
+  setSingleTranscodingJob: (job: singleTranscodingJobState) => void;
   singleTranscodingJob?: singleTranscodingJobState;
   fetchSingleTranscodingJob: (jobId: string) => Promise<void>;
   isFetchingSingleJob?: boolean;
@@ -20,6 +20,9 @@ type RouteState = {
 };
 
 export const useRouteStore = create<RouteState>((set) => ({
+  setSingleTranscodingJob: (job: singleTranscodingJobState) => {
+    set({ singleTranscodingJob: job });
+  },
   transcodingJobs: [],
   fetchTranscodingJobs: async () => {
     try {
@@ -87,5 +90,6 @@ export const useRouteStore = create<RouteState>((set) => ({
     } catch (error) {
       console.error("Error deleting transcoding job:", error);
     }
-  },
+  }
+
 }));

@@ -2,12 +2,16 @@
 
 import { Button } from "@/components/ui/button";
 import { BACKEND_URL } from "@/config";
-import type { singleTranscodingJobState } from "@/store/routeStore";
+import {
+  useRouteStore,
+  type singleTranscodingJobState,
+} from "@/store/routeStore";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import axios from "axios";
 import React from "react";
 import { io, type Socket } from "socket.io-client";
 import { toast } from "sonner";
+import { JobLog, JobStatus } from "@repo/common/types";
 
 interface SocketLog {
   logLevel: string;
@@ -20,16 +24,25 @@ interface SocketLog {
   outputKeys?: string;
 }
 
+interface Mergelogs extends JobLog {
+  videoId?: string;
+  status?: string;
+  duration?: string;
+  outputKeys?: string;
+}
+
 export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
+  const { setSingleTranscodingJob } = useRouteStore();
   const [activeTab, setActiveTab] = React.useState<"logs" | "export">("logs");
   const scrollRef = React.useRef<HTMLDivElement>(null);
-  const [socketLogs, setSocketLogs] = React.useState<SocketLog[]>([]);
+  const [socketLogs, setSocketLogs] = React.useState<Mergelogs[]>(
+    singleTranscodingJob.logs || []
+  );
   const socketRef = React.useRef<Socket | null>(null);
 
   const parsedExportData = JSON.parse(
     singleTranscodingJob.outputS3Keys || "[]"
   );
-
   //   [
   //   'videos/f8286d09-dc37-49ca-9245-7c94a20a37e0/144p.mp4',
   //   'videos/f8286d09-dc37-49ca-9245-7c94a20a37e0/240p.mp4',
@@ -75,7 +88,28 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
     });
 
     socketRef.current.on("log", (log) => {
-      console.log("Received log from WebSocket:", log);
+      if (log.status === "COMPLETED") {
+        setSingleTranscodingJob({
+          ...singleTranscodingJob,
+          status: JobStatus.COMPLETED,
+          completeDuration: log.duration,
+          outputS3Keys: log.outputKeys,
+        });
+        toast.success("Transcoding job completed successfully!");
+      }
+      if (log.status === "FAILED") {
+        setSingleTranscodingJob({
+          ...singleTranscodingJob,
+          status: JobStatus.FAILED,
+        });
+        toast.error("Transcoding job failed!");
+      }
+      if (log.status === "STARTED") {
+        setSingleTranscodingJob({
+          ...singleTranscodingJob,
+          status: JobStatus.PROCESSING,
+        });
+      }
       setSocketLogs((prevLogs) => [...prevLogs, log]);
     });
 
