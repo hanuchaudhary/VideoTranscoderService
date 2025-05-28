@@ -168,7 +168,7 @@ export function UploadPage() {
                   Select Video File
                 </Button>
               </div>
-              <div className="flex flex-col items-end absolute -right-60 -bottom-80 blur-xl z-0 ">
+              <div className="flex flex-col dark:opacity-100 opacity-50 items-end absolute -right-60 -bottom-80 blur-xl z-0 ">
                 <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-purple-600 to-sky-600"></div>
                 <div className="h-[10rem] rounded-full w-[90rem] z-1 bg-gradient-to-b blur-[6rem] from-pink-900 to-yellow-400"></div>
                 <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-yellow-600 to-sky-500"></div>
