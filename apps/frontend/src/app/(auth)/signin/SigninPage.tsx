@@ -77,7 +77,7 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="h-[calc(100vh)] flex items-center justify-center p-4">
+    <div className="h-[calc(100vh)] relative z-20 flex items-center justify-center p-4">
       <div className="w-full max-w-sm bg-transparent border-none shadow-none font-mono">
         <div className="flex flex-col items-center space-y-4 mb-8">
           <Logo height={15} width={15} />
@@ -148,11 +148,11 @@ export default function SignInPage() {
           </Form>
           <div className="mt-8 text-center text-xs text-muted-foreground">
             You acknowledge that you have read and agree to our{" "}
-            <Link href="/terms" className="underline">
+            <Link href="/terms" className="underline hover:text-primary">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="underline">
+            <Link href="/privacy" className="underline hover:text-primary">
               Privacy Policy
             </Link>
           </div>

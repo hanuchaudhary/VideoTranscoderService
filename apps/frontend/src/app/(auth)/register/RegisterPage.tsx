@@ -82,7 +82,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="h-[calc(100vh)] flex font-mono items-center justify-center p-4">
+    <div className="h-[calc(100vh)] relative z-20 flex font-mono items-center justify-center p-4">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center space-y-4 mb-8">
           <Logo height={15} width={15} />
@@ -171,11 +171,11 @@ export default function RegisterPage() {
           </Form>
           <div className="mt-8 text-center text-xs text-muted-foreground">
             You acknowledge that you have read and agree to our{" "}
-            <Link href="/terms" className="underline">
+            <Link href="/terms" className="underline hover:text-primary">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="underline">
+            <Link href="/privacy" className="underline hover:text-primary">
               Privacy Policy
             </Link>
           </div>
