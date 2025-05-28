@@ -1,84 +1,126 @@
-# Turborepo starter
+# Voxer - Video Transcoding Service [beta]
 
-This Turborepo starter is maintained by the Turborepo core team.
+## Overview
 
-## Using this example
+**Voxer** is a scalable, cloud-based video transcoding service designed to empower **Content Creators**, **Businesses**, and **Developers** to process videos efficiently. Whether you're a YouTuber needing multiple resolutions for your audience, a business preparing training videos, or a developer building a media platform, Voxer delivers fast, secure, and reliable video transcoding with a seamless user experience.
 
-Run the following command:
+Built with a modern tech stack, Voxer leverages **AWS services** and **real-time logging** to transcode videos into various resolutions (e.g., 144p to 4K) in ~2 minutes for a 150 MB video, supporting use cases across **Free**, **Basic**, **Pro**, and **Enterprise** plans.
 
-```sh
-npx create-turbo@latest
-```
+---
 
-## What's inside?
+## Key Features
 
-This Turborepo includes the following packages/apps:
+- **Multi-Resolution Transcoding**  
+  Transcode videos into user-selected resolutions (e.g., 144p, 360p, 720p, 1080p, 4K) with **FFmpeg**, optimized for different pricing tiers (e.g., Free users limited to 360p, Enterprise up to 4K).
 
-### Apps and Packages
+- **Real-Time Progress Updates**  
+  View live transcoding logs (e.g., `Transcoding 720p: 5% complete`) via **WebSocket** and **Redis Pub/Sub**, ensuring users stay informed during the ~2-minute process.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- **Secure Downloads with CloudFront**  
+  Download transcoded videos via **signed CloudFront URLs** with dynamic expiration (e.g., 1 hour for Free users, 7 days for Enterprise), ensuring low-latency and secure access globally.
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+- **Streaming Previews (Pro/Enterprise)**  
+  Preview videos before downloading using **HLS streaming**, served via CloudFront (exclusive to Pro and Enterprise plans).
 
-### Utilities
+---
 
-This Turborepo has some additional tools already setup for you:
+## Tiered Pricing Plans
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+| Plan       | Max Resolution | Download Expiration | Streaming Preview | Bulk Processing |
+|------------|----------------|----------------------|-------------------|-----------------|
+| Free       | 360p           | 1 hour               | ❌                | ❌              |
+| Basic      | 720p           | 1 day                | ❌                | ❌              |
+| Pro        | 1080p          | 3 days               | ✅                | ❌              |
+| Enterprise | 4K             | 7 days               | ✅                | ✅              |
 
-### Build
+---
 
-To build all apps and packages, run the following command:
+## User Dashboard
 
-```
-cd my-turborepo
-pnpm build
-```
+A **React-based dashboard** with tabs for:
 
-### Develop
+- Viewing real-time logs  
+- Downloading transcoded videos  
+- Previewing streams (for eligible plans)  
 
-To develop all apps and packages, run the following command:
+---
 
-```
-cd my-turborepo
-pnpm dev
-```
+## Scalable Architecture
 
-### Remote Caching
+Voxer is built on a robust, cloud-native architecture using **AWS services** and **modern JavaScript technologies**:
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+- **Frontend**:  
+  - React with TypeScript  
+  - `socket.io-client` for real-time log updates  
+  - `axios` for API requests  
+  - Responsive UI with auto-scrolling logs and export info (resolution, file size, completion time, thumbnails)
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+- **Backend**:  
+  - Express.js (Node.js) with TypeScript  
+  - API routes, WebSocket connections (socket.io)  
+  - Redis Pub/Sub for log distribution
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+- **Transcoding**:  
+  - ECS Fargate tasks running FFmpeg containers  
+  - Triggered by SQS messages from S3 uploads  
+  - Scales to process multiple jobs concurrently
 
-```
-cd my-turborepo
-npx turbo login
-```
+---
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+## Storage
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+- **S3**: Stores raw and transcoded videos (`raw-transcoder-videos`, `final-bucket`), and thumbnails for previews.
+- **CloudFront**: Serves transcoded videos and HLS streams with **signed URLs** for secure, low-latency access.
 
-```
-npx turbo link
-```
+---
 
-## Useful Links
+## Database
 
-Learn more about the power of Turborepo:
+- **PostgreSQL** via **Drizzle ORM** for persisting:
+  - User data  
+  - Transcoding jobs (`transcodingJobs`)  
+  - Logs (`jobLogs`)
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+---
+
+## Real-Time Messaging
+
+- **Redis Pub/Sub**:  
+  - Decouples log publishing (from ECS tasks) and consumption (by backend)  
+  - Handles ~1,333 logs/second for 1,000 concurrent jobs
+
+- **WebSocket**:  
+  - Pushes logs to clients in real-time  
+  - Uses `job:${jobId}` rooms for efficient delivery
+
+- **Queueing**:  
+  - SQS polls S3 events to trigger ECS tasks  
+  - Ensures reliable job processing
+
+---
+
+## Performance
+
+- Transcodes a 150 MB video into all formats (144p to 4K) in ~2 minutes using ECS Fargate
+- Supports:
+  - ~160 logs per job (progress updates every 5% per resolution)  
+  - ~1,333 logs/second for 1,000 concurrent jobs
+- WebSocket and Redis Pub/Sub ensure **real-time log delivery** with **minimal latency**
+
+---
+
+## Target Audience
+
+- **Content Creators**: YouTubers, streamers, educators needing various resolutions (e.g., Instagram: 720p, YouTube: 1080p)
+- **Businesses**: Training and marketing videos with secure downloads and bulk processing (Enterprise)
+- **Developers**: API-driven workflows for media platforms using Voxer’s scalable pipeline
+
+---
+
+## Business Value
+
+- **Efficiency**: Transcodes videos in ~2 minutes, with real-time feedback to keep users engaged
+- **Scalability**: Handles thousands of concurrent users, supporting global Enterprise clients
+- **Security**: Signed CloudFront URLs and authentication ensure secure access
+- **Upsell Opportunities**: Tiered plans promote upgrades (e.g., Free → Pro for 1080p and previews)
+- **User Experience**: Clean dashboard with thumbnails, sizes, previews — driving retention and satisfaction
