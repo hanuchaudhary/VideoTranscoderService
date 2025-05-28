@@ -25,7 +25,7 @@ export default function LandingNavbar() {
             <>
               <Link href={"/signin"}>
                 <Button variant={"outline"} size={"sm"}>
-                  Login
+                  Signin
                 </Button>
               </Link>
               <Link href={"/register"}>

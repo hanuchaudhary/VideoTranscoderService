@@ -2,6 +2,7 @@ import React from "react";
 import { Logo } from "../Logo";
 import Link from "next/link";
 import { ThemeSwitcher } from "../ThemeToggle";
+import { Signout } from "./Signout";
 
 export function DashboardNavbar() {
   return (
@@ -12,12 +13,13 @@ export function DashboardNavbar() {
       >
         <Logo />
         <h1 className="text-xl font-semibold leading-none relative z-20">
-          Voxer.
+          Voxer
         </h1>
       </Link>
       <div className="flex items-center gap-2">
-        <ThemeSwitcher/>
+        <ThemeSwitcher />
         <Logo />
+      <Signout />
       </div>
     </div>
   );

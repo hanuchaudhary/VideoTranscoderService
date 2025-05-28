@@ -6,16 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Eye, EyeOff } from "lucide-react";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -26,8 +18,12 @@ import {
 } from "@/components/ui/form";
 import { authClient } from "@/lib/authClient";
 import { toast } from "sonner";
+import { Logo } from "@/components/Logo";
 
 const formSchema = z.object({
+  name: z.string().min(3, {
+    message: "Username must be at least 3 characters.",
+  }),
   email: z.string().email({
     message: "Please enter a valid email address.",
   }),
@@ -36,13 +32,14 @@ const formSchema = z.object({
   }),
 });
 
-export default function SignInPage() {
+export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
     },
@@ -51,58 +48,83 @@ export default function SignInPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setLoading(true);
     try {
-      const { data, error } = await authClient.signIn.email(
+      const { data, error } = await authClient.signUp.email(
         {
-          email: values.email, // user email
-          password: values.password, // user password
+          email: values.email,
+          password: values.password,
+          name: values.name,
         },
         {
-          onError: (error) => {
-            console.error("Sign In Error:", error);
-            toast.error(error.error.message || "Failed to sign in");
-          },
-          onSuccess: (data) => {
-            console.log("Sign In Success:", data);
-            toast.success("Signed in successfully");
-          },
-          onRequest: () => {
+          onRequest: (ctx) => {
             toast.loading("Creating account...");
           },
-          onResponse: () => {
+          onSuccess: (ctx) => {
             toast.dismiss();
+            toast.success("Account created successfully! Please sign in.");
+          },
+          onError: (ctx) => {
+            toast.dismiss();
+            toast.error(
+              ctx.error.code === "USER_ALREADY_EXISTS"
+                ? "Email already registered. Please sign in."
+                : ctx.error.message || "Failed to create account."
+            );
           },
         }
       );
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      toast.error("Error creating account. Please try again.", {
+        description: error.message,
+      });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="h-[calc(100vh-200px)] flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Sign In</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="h-[calc(100vh)] flex font-mono items-center justify-center p-4">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center space-y-4 mb-8">
+          <Logo height={15} width={15} />
+          <h2 className="md:text-2xl text-xl font-semibold">
+            Register to Get Started
+          </h2>
+          <div className="text-muted-foreground text-xs">
+            Already have an account?{" "}
+            <Link href="/signin" className="underline text-primary">
+              Sign in here
+            </Link>
+          </div>
+        </div>
+        <div>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        placeholder="Your name"
+                        {...field}
+                        disabled={loading}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Enter your email"
-                        disabled={loading}
+                        placeholder="Your email"
                         {...field}
+                        disabled={loading}
                       />
                     </FormControl>
                     <FormMessage />
@@ -114,14 +136,13 @@ export default function SignInPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <div className="relative">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Enter your password"
-                          disabled={loading}
+                          placeholder="••••••"
                           {...field}
+                          disabled={loading}
                         />
                         <Button
                           type="button"
@@ -144,18 +165,22 @@ export default function SignInPage() {
                 )}
               />
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing In..." : "Sign In"}
+                {loading ? "Signing Up..." : "Sign Up"}
               </Button>
             </form>
           </Form>
-          <div className="mt-4 text-center text-sm">
-            Don't have an account?{" "}
-            <Link href="/register" className="underline">
-              Sign up
+          <div className="mt-8 text-center text-xs text-muted-foreground">
+            You acknowledge that you have read and agree to our{" "}
+            <Link href="/terms" className="underline">
+              Terms of Service
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline">
+              Privacy Policy
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
