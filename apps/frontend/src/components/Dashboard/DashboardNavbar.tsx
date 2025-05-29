@@ -18,8 +18,7 @@ export function DashboardNavbar() {
       </Link>
       <div className="flex items-center gap-2">
         <ThemeSwitcher />
-        <Logo />
-      <Signout />
+        <Signout />
       </div>
     </div>
   );

@@ -8,7 +8,13 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
     "dev:backend": "cd apps/backend && pnpm dev",
-    "dev:frontend": "cd apps/frontend && pnpm dev"
+    "dev:frontend": "cd apps/frontend && pnpm dev",
+    "start:backend": "cd apps/backend && pnpm start",
+    "start:frontend": "cd apps/frontend && pnpm start",
+    "db:push": "cd packages/database && pnpm db:push",
+    "db:migrate": "cd packages/database && pnpm db:migrate",
+    "db:generate": "cd packages/database && pnpm db:generate",
+    "db:studio": "cd packages/database && pnpm db:studio"
   },
   "devDependencies": {
     "prettier": "^3.5.3",

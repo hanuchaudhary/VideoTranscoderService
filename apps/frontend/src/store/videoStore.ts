@@ -65,7 +65,9 @@ export const useVideoStore = create<VideoState>((set, get) => ({
   videoFile: null,
   abortController: new AbortController(),
 
-  setResolutions: (res) => set({ resolutions: res }),
+  setResolutions: (res) => {
+    set({ resolutions: res });
+  },
   processVideoSelection: async (file) => {
     if (!file) {
       toast.error("No file selected", {
@@ -306,12 +308,16 @@ export const useVideoStore = create<VideoState>((set, get) => ({
         abortController: undefined,
       });
 
-      await axios.put(`${BACKEND_URL}/api/v1/transcoding/status/${get().returnedVideoId}`, {
-        errorMessage : "Upload cancelled by user",
-        status: "CANCELED",
-      },{
-        withCredentials: true,
-      })
+      await axios.put(
+        `${BACKEND_URL}/api/v1/transcoding/status/${get().returnedVideoId}`,
+        {
+          errorMessage: "Upload cancelled by user",
+          status: "CANCELED",
+        },
+        {
+          withCredentials: true,
+        }
+      );
 
       toast.dismiss("upload-progress");
     }

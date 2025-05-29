@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsc-watch --onSuccess \"node dist/index.js\"",
-    "build": "tsc -b"
+    "build": "tsc -b",
+    "start": "tsc -b && node dist/index.js"
   },
   "keywords": [],
   "author": "",

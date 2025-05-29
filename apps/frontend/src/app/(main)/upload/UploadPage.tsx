@@ -24,7 +24,6 @@ export function UploadPage() {
     handleFileUpload,
     processVideoSelection,
     isUploadingMedia,
-    uploadProgress,
     videoLoading,
     resolutions,
     setResolutions,
