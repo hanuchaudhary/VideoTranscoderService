@@ -2,6 +2,8 @@ FROM node:alpine-20
 
 WORKDIR /usr/src/app
 
+ARG DATBASE_URL
+
 COPY ./package.json ./package.json
 COPY ./pnpm-lock.yaml ./pnpm-lock.yaml
 
@@ -15,7 +17,7 @@ RUN npm i -g pnpm
 RUN pnpm install
 RUN pnpm db:push
 
-RUN pnpm run build
+RUN DATABASE_URL=${DATABASE_URL} pnpm run build
 
 EXPOSE 3000
 
