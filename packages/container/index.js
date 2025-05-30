@@ -34,9 +34,8 @@ const s3Client = new S3Client({
 const USER_RESOLUTIONS = JSON.parse(process.env.RESOLUTIONS || "[]"); // e.g., ["720p", "1080p"]
 console.log(`Using user-defined resolutions: ${USER_RESOLUTIONS}`);
 
-
 // Resolutions for transcoding TODO: Add more resolutions like 4K, 8K, 240p etc. ✅
-const RESOLUTION_MAP  = [
+const RESOLUTION_MAP = [
   { name: "144p", width: 256, height: 144 },
   { name: "240p", width: 426, height: 240 },
   { name: "360p", width: 640, height: 360 },
@@ -47,16 +46,21 @@ const RESOLUTION_MAP  = [
   { name: "4K", width: 3840, height: 2160 },
 ];
 
-const RESOLUTIONS = USER_RESOLUTIONS
-  .map((res) => RESOLUTION_MAP.find(r => r.name === res))
-  .filter(Boolean);
+const RESOLUTIONS = USER_RESOLUTIONS.map((res) =>
+  RESOLUTION_MAP.find((r) => r.name === res)
+).filter(Boolean);
 
 console.log(`Using resolutions: ${RESOLUTIONS}`);
 
-
 const init = async () => {
   // Validate environment variables
-  const requiredEnvVars = ["BUCKET_NAME", "KEY", "VIDEO_ID", "REDIS_URL", "FINAL_BUCKET_NAME"];
+  const requiredEnvVars = [
+    "BUCKET_NAME",
+    "KEY",
+    "VIDEO_ID",
+    "REDIS_URL",
+    "FINAL_BUCKET_NAME",
+  ];
   for (const envVar of requiredEnvVars) {
     if (!process.env[envVar]) {
       console.error(`Missing environment variable: ${envVar}`);
@@ -127,7 +131,9 @@ const init = async () => {
             const currentPercent = Math.floor(progress.percent);
             // Log only if the current percentage is a multiple of 5 and different from the last logged percentage
             if (currentPercent >= lastLoggedPercent + 5) {
-              console.log(`Transcoding ${resolution.name}: ${currentPercent}% complete`);
+              console.log(
+                `Transcoding ${resolution.name}: ${currentPercent}% complete`
+              );
               publishToRedis({
                 logLevel: "INFO",
                 logMessage: `Transcoding ${resolution.name}: ${currentPercent}% complete`,
@@ -203,13 +209,14 @@ const init = async () => {
       logMessage: `Transcoding completed`,
       status: "COMPLETED",
       videoId,
-      outputKeys : JSON.stringify(outputKeys),
-      duration : `${duration.toFixed(2)} seconds`,
+      outputKeys: JSON.stringify(outputKeys),
+      duration: `${duration.toFixed(2)} seconds`,
     });
 
     // Remove the original file after transcoding
     await fs.unlink(originalFilePath);
     console.log(`Cleaned up original file: ${originalFilePath}`);
+    process.exit(0);
   } catch (error) {
     console.error("Error in transcoding process:", error);
     if (originalFilePath) {

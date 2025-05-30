@@ -55,17 +55,10 @@ redisClient.on("message", async (channel, message) => {
   console.log(`Received message from channel ${channel}:`, message);
 
   const parsedMessage = JSON.parse(message);
-  const {
-    videoId,
-    status,
-    logMessage,
-    logLevel,
-    outputKeys,
-    duration,
-  } = parsedMessage;
+  const { videoId, status, logMessage, logLevel, outputKeys, duration } =
+    parsedMessage;
 
-  console.log("Parsed",parsedMessage);
-  
+  console.log("Parsed", parsedMessage);
 
   await db.insert(jobLogs).values({
     id: uuid(),
@@ -106,7 +99,9 @@ io.on("connection", (socket) => {
       console.error("No jobId provided for subscription");
       return;
     }
-    console.log(`Socket ${socket.id} subscribed to job: ${JSON.stringify(jobId)}`);
+    console.log(
+      `Socket ${socket.id} subscribed to job: ${JSON.stringify(jobId)}`
+    );
     socket.join(`job:${jobId}`);
   });
 
@@ -210,15 +205,21 @@ const pollForMessages = async () => {
               object: { key },
             } = s3;
 
-            // Extract videoId from the S3 key (e.g., uploads/UserId/VideoId/video.mp4)
+            // Extract videoId from the S3 key (e.g., uploads/2pi88wQwqHz2b7eDjlQYuSsDZDkCLMkI/69d25e7b-f5e4-4d50-b6d7-827332b87574/video.mp4)
+
+            // 69d25e7b-f5e4-4d50-b6d7-827332b87574 is the videoId
             const videoIdMatch = key.match(
-              /uploads\/([a-zA-Z0-9-]+)\/video\.mp4/
-            ); // gives videoId
-            if (!videoIdMatch) {
-              console.error(`Invalid S3 key format: ${key}`);
+              /uploads\/[^/]+\/([^/]+)\/video\.mp4$/
+            );
+
+            console.log("videoIdMatch:", videoIdMatch);
+
+            if (!videoIdMatch || videoIdMatch.length < 2) {
+              console.error(`Failed to extract videoId from S3 key: ${key}`);
               continue;
             }
-            const videoId = videoIdMatch[2];
+
+            const videoId = videoIdMatch[1];
             console.log("Video ID extracted from S3 key:", videoId);
 
             const job = await db
@@ -254,7 +255,7 @@ const pollForMessages = async () => {
                 overrides: {
                   containerOverrides: [
                     {
-                      name: "video-transcoder",
+                      name: process.env.ECS_CONTAINER_NAME,
                       environment: [
                         // {name:"USER_ID", value: videoId},
                         { name: "BUCKET_NAME", value: bucket.name },
@@ -280,6 +281,10 @@ const pollForMessages = async () => {
                           name: "AWS_REGION",
                           value: process.env.AWS_REGION,
                         },
+                        {
+                          name: "REDIS_URL",
+                          value: process.env.REDIS_URL 
+                        }
                       ],
                     },
                   ],
@@ -317,5 +322,5 @@ const pollForMessages = async () => {
 const PORT = process.env.PORT || 8000;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  // pollForMessages();
+  pollForMessages();
 });
