@@ -15,6 +15,7 @@ COPY ./apps/frontend ./apps/frontend
 RUN npm i -g pnpm
 
 RUN pnpm install
+RUN pnpm db:push
 
 RUN DATABASE_URL=${DATABASE_URL} pnpm run build
 

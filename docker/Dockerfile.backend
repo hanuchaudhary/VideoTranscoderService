@@ -13,7 +13,6 @@ COPY ./apps/backend ./apps/backend
 RUN npm i -g pnpm
 
 RUN pnpm install
-RUN pnpm db:push
 
 RUN pnpm run build
 
