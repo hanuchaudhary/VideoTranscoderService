@@ -1,3 +1,4 @@
+
 name: CD Backend
 
 on:
@@ -26,5 +27,5 @@ jobs:
           push: true
           tags: ${{secrets.DOCKER_USERNAME}}/voxer-backend:${{ github.sha }} ## Use the commit SHA as the tag
           build-args: 
-            - DATABASE_URL=${{ secrets.DATABASE_URL }} ## Pass the DATABASE_URL as a build argument
+            - DATABASE_URL=${{ secrets.DATABASE_URL }}
   
