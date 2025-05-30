@@ -1,6 +1,3 @@
-## Build the docker image and push it to the registry
-## SSH into the server and pull the latest image
-
 name: CD Frontend
 
 on:

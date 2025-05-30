@@ -1,6 +1,3 @@
-## Build the docker image and push it to the registry
-## SSH into the server and pull the latest image
-
 name: CD Backend
 
 on:
@@ -28,4 +25,6 @@ jobs:
           file: docker/Dockerfile.backend
           push: true
           tags: ${{secrets.DOCKER_USERNAME}}/voxer-backend:${{ github.sha }} ## Use the commit SHA as the tag
+          build-args: 
+            - DATABASE_URL=${{ secrets.DATABASE_URL }} ## Pass the DATABASE_URL as a build argument
   
