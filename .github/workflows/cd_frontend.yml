@@ -28,4 +28,6 @@ jobs:
           file: docker/Dockerfile.frontend
           push: true
           tags: ${{secrets.DOCKER_USERNAME}}/voxer-frontend:${{ github.sha }} ## Use the commit SHA as the tag
+          build-args: 
+            - DATABASE_URL=${{ secrets.DATABASE_URL }} ## Pass the DATABASE_URL as a build argument
   

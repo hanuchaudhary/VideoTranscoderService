@@ -1,6 +1,7 @@
 FROM node:20-alpine
 
 WORKDIR /usr/src/app
+ARG DATABASE_URL
 
 COPY package.json pnpm-lock.yaml turbo.json pnpm-workspace.yaml ./
 
@@ -10,7 +11,7 @@ COPY ./apps/frontend ./apps/frontend
 RUN npm i -g pnpm
 
 RUN pnpm install
-RUN pnpm db:push
+RUN ${DATABASE_URL} pnpm db:push
 
 RUN pnpm run build
 
