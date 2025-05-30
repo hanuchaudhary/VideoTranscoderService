@@ -27,5 +27,5 @@ jobs:
           context: .
           file: docker/Dockerfile.backend
           push: true
-          tags: voxer-backend:${{ github.sha }} ## Use the commit SHA as the tag
+          tags: ${{secrets.DOCKER_USERNAME}}/backend:${{ github.sha }} ## Use the commit SHA as the tag
   
