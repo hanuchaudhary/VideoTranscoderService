@@ -4,12 +4,9 @@ WORKDIR /usr/src/app
 
 ARG DATBASE_URL
 
-COPY ./package.json ./package.json
-COPY ./pnpm-lock.yaml ./pnpm-lock.yaml
+COPY package.json pnpm-lock.yaml turbo.json pnpm-workspace.yaml ./
 
-COPY ./turbo.json ./turbo.json
 COPY ./packages ./packages
-
 COPY ./apps/frontend ./apps/frontend
 
 RUN npm i -g pnpm

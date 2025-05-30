@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -16,7 +14,7 @@ services:
       context: .
       dockerfile: docker/Dockerfile.frontend
       args:
-        - DB_URL=postgresql://postgres:postgres@postgres:5432/postgres
+        - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/postgres
     ports:
       - "3000:3000"
     environment:

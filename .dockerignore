@@ -1,2 +1,9 @@
+apps/backend/node_modules
+apps/frontend/node_modules
+Dockerfile*
+docker-compose.yml
+*.log
+
 node_modules
-.env
+**/node_modules
+**/node_modules/*

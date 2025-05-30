@@ -14,7 +14,9 @@
     "db:push": "cd packages/database && pnpm db:push",
     "db:migrate": "cd packages/database && pnpm db:migrate",
     "db:generate": "cd packages/database && pnpm db:generate",
-    "db:studio": "cd packages/database && pnpm db:studio"
+    "db:studio": "cd packages/database && pnpm db:studio",
+    "build:backend": "cd apps/backend && pnpm build",
+    "build:frontend": "cd apps/frontend && pnpm build"
   },
   "devDependencies": {
     "prettier": "^3.5.3",
