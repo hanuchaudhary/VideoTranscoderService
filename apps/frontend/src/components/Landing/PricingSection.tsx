@@ -1,5 +1,7 @@
 import { Check } from "lucide-react";
 import React from "react";
+import { Button } from "../ui/button";
+import { IconArrowRight } from "@tabler/icons-react";
 
 interface Plan {
   title: string;
@@ -16,74 +18,54 @@ export function PricingSection() {
     {
       title: "Free",
       price: "$0/month",
-      description: "Perfect for hobbyists and testing the service.",
-      credits: "10 minutes/month",
+      description: "Kick off your video project. No credit card required.",
+      credits: "100K delivery minutes/month",
       features: [
-        "Up to 720p resolution",
-        "Basic codecs (H.264)",
-        "Watermarked outputs",
+        "720p resolution",
+        "H.264 codec support",
+        "No live streaming",
         "Email support (48-hour response)",
-        "1 concurrent transcode",
         "No API access",
-        "No priority processing",
+        "Up to 10 uploaded videos",
       ],
-      buttonText: "Get Started",
+      buttonText: "Start for Free",
       buttonVariant: "outline",
     },
     {
-      title: "Basic",
-      price: "$9.99/month",
-      description: "Ideal for small creators and startups.",
-      credits: "100 minutes/month",
+      title: "Starter",
+      price: "$10/month",
+      description: "Scales with your app or site as it grows.",
+      credits: "$100 usage credit/month",
       features: [
         "Up to 1080p resolution",
-        "All codecs (H.264, H.265, VP9)",
-        "No watermarks",
+        "All major codecs (H.264, H.265)",
+        "Live and on-demand streaming",
         "Email support (24-hour response)",
-        "2 concurrent transcodes",
-        "Basic API access (100 API calls/month)",
-        "Standard processing speed",
-        "Add-on: $0.10 per additional minute",
+        "Basic API access",
+        "Unlimited video uploads",
+        "Add-on: $0.05 per additional 1000 minutes",
       ],
-      buttonText: "Choose Basic",
+      buttonText: "Start Building",
       buttonVariant: "primary",
     },
     {
-      title: "Pro",
-      price: "$29.99/month",
-      description: "Best for professional creators and businesses.",
-      credits: "500 minutes/month",
+      title: "Enterprise",
+      price: "Custom Pricing",
+      description: "More security, support, and scale for larger teams.",
+      credits: "Custom usage credits",
       features: [
-        "Up to 4K resolution",
-        "All codecs + advanced settings (e.g., custom bitrate)",
+        "Up to 4K resolution + custom renditions",
+        "All codecs with advanced settings",
         "No watermarks",
-        "Priority email + 24/7 chat support",
-        "5 concurrent transcodes",
-        "Full API access (1,000 API calls/month)",
-        "Priority processing for faster results",
-        "Add-on: $0.05 per additional minute",
+        "Live + VOD with SLA uptime guarantee",
+        "Dedicated support + 24/7 access",
+        "Advanced API (unlimited calls)",
+        "Custom integrations + analytics",
+        "Steep usage discounts above $3K/month",
       ],
-      buttonText: "Choose Pro",
-      buttonVariant: "primary",
+      buttonText: "Talk to Us",
+      buttonVariant: "outline",
     },
-    // {
-    //   title: "Enterprise",
-    //   price: "Custom Pricing",
-    //   description: "Tailored for high-volume users and large organizations.",
-    //   credits: "Unlimited minutes",
-    //   features: [
-    //     "Up to 4K resolution + custom outputs",
-    //     "All codecs + bespoke encoding options",
-    //     "No watermarks",
-    //     "Dedicated account manager + 24/7 priority support",
-    //     "Unlimited concurrent transcodes",
-    //     "Advanced API access (unlimited calls)",
-    //     "Guaranteed SLA (99.9% uptime)",
-    //     "Custom integrations and analytics",
-    //   ],
-    //   buttonText: "Contact Us",
-    //   buttonVariant: "outline",
-    // },
   ];
 
   return (
@@ -124,25 +106,31 @@ export function PricingSection() {
             key={index}
             className={`flex flex-col ${
               index === pricingPlans.length - 1 ? "" : "border-r"
-            } py-14 px-6`}
+            } pt-14 ${index === 1 ? "bg-secondary/30" : ""}`}
           >
-            <div>
-              <h3 className="text-xl font-bold">{plan.title}</h3>
+            <div className="mb-8 px-6">
+              <h3 className="text-2xl font-semibold">{plan.title}</h3>
               <p className="text-muted-foreground mt-2 mb-1">
                 {plan.description}
               </p>
-              <p className="text-primary font-semibold mb-6">
+              <p className="text-primary font-semibold">
                 {plan.price} – {plan.credits}
               </p>
             </div>
-            <div>
+            <div className="mb-4 px-6">
               {plan.features.map((feature, i) => (
-                <div key={i} className="flex items-center mb-2">
+                <div key={i} className="flex text-sm items-center mb-2">
                   <Check className="w-5 h-5 text-emerald-500 mr-2" />
                   <span className="text-muted-foreground">{feature}</span>
                 </div>
               ))}
             </div>
+            <button
+              className={`mt-auto py-4 border-t w-full font-semibold gap-4 flex items-center cursor-pointer justify-center leading-none ${index === 1 ? "bg-blue-600 hover:bg-blue-500 text-white" : "hover:bg-secondary/30"}`}
+            >
+              <span>{plan.buttonText}</span>
+              <IconArrowRight />
+            </button>
           </div>
         ))}
       </div>

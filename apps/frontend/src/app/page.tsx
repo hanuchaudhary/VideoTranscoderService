@@ -12,7 +12,7 @@ export default function Home() {
   return (
   <div className="px-5 pt-12 transition-transform">
       <LandingNavbar />
-      <div className="relative max-w-5xl mx-auto flex min-h-screen flex-col border mt-10">
+      <div className="relative max-w-[67rem] mx-auto flex min-h-screen flex-col border mt-10">
         <div className="absolute -top-4 -right-4">
           <PlusIcon />
         </div>

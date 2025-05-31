@@ -23,7 +23,7 @@ interface Mergelogs extends JobLog {
 export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
   const { setSingleTranscodingJob } = useRouteStore();
   const [activeTab, setActiveTab] = React.useState<"logs" | "export">("logs");
-  const scrollRef = React.useRef<HTMLDivElement>(null);
+  const messagesEndRef = React.useRef<HTMLDivElement>(null);
   const [socketLogs, setSocketLogs] = React.useState<Mergelogs[]>(
     singleTranscodingJob.logs || []
   );
@@ -45,12 +45,6 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
       return { videoKey, resolution };
     });
 
-  React.useEffect(() => {
-    if (scrollRef.current && activeTab === "logs") {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [socketLogs, activeTab]);
-
   function logLevelToColor(logLevel: string) {
     switch (logLevel) {
       case "INFO":
@@ -63,6 +57,13 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
         return "text-gray-500";
     }
   }
+
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [socketLogs]);
 
   // Initialize WebSocket connection
   React.useEffect(() => {
@@ -169,7 +170,7 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
         </button>
       </div>
       <ScrollArea className="p-4 h-96 bg-secondary/30 backdrop-blur-sm">
-        <div ref={scrollRef} className="space-y-2">
+        <div className="space-y-2">
           {activeTab === "logs" && (
             <div className="space-y-2 flex flex-col font-mono text-sm">
               {socketLogs?.length === 0 ? (
@@ -198,6 +199,7 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
                   </span>
                 ))
               )}
+              <div ref={messagesEndRef} />
             </div>
           )}
           {activeTab === "export" && (
