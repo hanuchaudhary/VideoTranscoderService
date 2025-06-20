@@ -18,7 +18,7 @@ import {
   VIDEO_QUALITIES,
   VideoQuality,
 } from "@/store/videoStore";
-import {UploadBox} from "./UploadBox";
+import { UploadBox } from "./UploadBox";
 import Link from "next/link";
 
 export function UploadPage() {
@@ -35,7 +35,6 @@ export function UploadPage() {
     resetState,
   } = useVideoStore();
 
-  // Drag and drop functionality
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
       "video/mp4": [".mp4"],
@@ -53,7 +52,6 @@ export function UploadPage() {
     },
   });
 
-  // Resolution selection logic for a specific video
   const handleQualityToggle = (videoId: string, quality: VideoQuality) => {
     const video = videoFiles.find((v) => v.id === videoId);
     if (!video?.inputQuality) return;
@@ -82,7 +80,6 @@ export function UploadPage() {
     }
   };
 
-  // Check if a quality is disabled for a specific video
   const isQualityDisabled = (
     videoId: string,
     quality: VideoQuality
@@ -124,46 +121,18 @@ export function UploadPage() {
         </Link>
       </div>
 
-      <div className="mb-8">
-        <h1 className="md:text-2xl text-xl font-semibold">
-          Ready to transcode your videos?
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Upload multiple video files and select transcoding resolutions for
-          each.
-        </p>
-      </div>
-
-      {globalLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <h1 className="md:text-2xl text-xl font-semibold">
+            Ready to transcode your videos?
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Upload multiple video files and select transcoding resolutions for
+            each.
+          </p>
         </div>
-      )}
-
-      {/* Upload Progress Box */}
-      <UploadBox />
-
-      <div className="space-y-6">
-        {/* File Upload Area */}
-        <div {...getRootProps()}>
-          <input {...getInputProps()} />
-          <div
-            className={`relative z-20 flex flex-col items-center justify-center h-80 border-2 dark:border-border border-neutral-300/50 font-mono ${
-              isDragActive
-                ? "border-blue-600 bg-primary/5"
-                : "border-border bg-secondary/30"
-            } cursor-pointer p-6`}
-          >
-            <Upload className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-center text-muted-foreground mb-2">
-              {isDragActive
-                ? "Drop your video files here"
-                : "Drag and drop your MP4 video files here"}
-            </p>
-            <p className="text-xs text-center text-muted-foreground mb-4">
-              Multiple files supported, MP4 format only, max 300MB each
-            </p>
-
+        {videoFiles.length > 0 && (
+          <div>
             <input
               ref={fileInputRef}
               type="file"
@@ -182,16 +151,69 @@ export function UploadPage() {
               Select Video Files
             </Button>
           </div>
-          <div className="flex flex-col dark:opacity-100 opacity-50 items-end absolute -right-60 -bottom-80 blur-xl z-0 ">
-            <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-purple-600 to-sky-600"></div>
-            <div className="h-[10rem] rounded-full w-[90rem] z-1 bg-gradient-to-b blur-[6rem] from-pink-900 to-yellow-400"></div>
-            <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-yellow-600 to-sky-500"></div>
+        )}
+      </div>
+
+      {globalLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-50">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      )}
+
+      <UploadBox />
+
+      <div className="space-y-6">
+        {videoFiles.length === 0 && (
+          <div {...getRootProps()}>
+            <input {...getInputProps()} />
+            <div
+              className={`relative z-20 flex flex-col items-center justify-center h-80 border-2 dark:border-border border-neutral-300/50 font-mono ${
+                isDragActive
+                  ? "border-blue-600 bg-primary/5"
+                  : "border-border bg-secondary/30"
+              } cursor-pointer p-6`}
+            >
+              <Upload className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-center text-muted-foreground mb-2">
+                {isDragActive
+                  ? "Drop your video files here"
+                  : "Drag and drop your MP4 video files here"}
+              </p>
+              <p className="text-xs text-center text-muted-foreground mb-4">
+                Multiple files supported, MP4 format only, max 300MB each
+              </p>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                onChange={handleFileChange}
+                multiple
+                accept="video/mp4"
+                className="hidden"
+                disabled={globalLoading}
+              />
+              <Button
+                type="button"
+                variant="default"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={globalLoading}
+              >
+                Select Video Files
+              </Button>
+            </div>
           </div>
+        )}
+
+        {/* Background Effects */}
+        <div className="flex flex-col dark:opacity-100 opacity-50 items-end fixed -right-60 -bottom-80 blur-xl z-0 ">
+          <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-purple-600 to-sky-600"></div>
+          <div className="h-[10rem] rounded-full w-[90rem] z-1 bg-gradient-to-b blur-[6rem] from-pink-900 to-yellow-400"></div>
+          <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-yellow-600 to-sky-500"></div>
         </div>
 
         {/* Video Files List */}
         {videoFiles.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4 relative z-10">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold">
                 Uploaded Videos ({videoFiles.length})
@@ -219,7 +241,7 @@ export function UploadPage() {
 
             <div className="grid gap-6">
               {videoFiles.map((video) => (
-                <div key={video.id} className="border rounded-lg p-4 bg-card">
+                <div key={video.id} className="border p-4 bg-secondary/30 backdrop-blur-sm">
                   <div className="flex gap-4">
                     {/* Video Preview */}
                     <div className="w-48 h-32 relative flex-shrink-0">

@@ -296,7 +296,6 @@ export const useVideoStore = create<VideoState>((set, get) => ({
         description: `${videoFile.file.name} uploaded successfully!`,
       });
 
-      // Reset upload state
       set((state) => ({
         videoFiles: state.videoFiles.map((v) =>
           v.id === id
@@ -379,7 +378,6 @@ export const useVideoStore = create<VideoState>((set, get) => ({
 
   resetState: () => {
     const { videoFiles } = get();
-    // Clean up object URLs
     videoFiles.forEach((video) => {
       URL.revokeObjectURL(video.preview);
       if (video.isUploading && video.abortController) {
