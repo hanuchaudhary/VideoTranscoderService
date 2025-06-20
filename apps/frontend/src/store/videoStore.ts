@@ -22,27 +22,36 @@ interface VideoMetadata {
   duration: number;
 }
 
-interface VideoState {
-  returnedVideoId?: string;
-  videoFile: File | null;
-  videoPreview: string | null;
-  videoFrame: string | null;
-  videoMetadata: VideoMetadata | null;
+interface VideoFile {
+  id: string;
+  file: File;
+  preview: string;
+  frame: string | null;
+  metadata: VideoMetadata | null;
   inputQuality: VideoQuality | null;
   resolutions: VideoQuality[];
-  videoLoading: boolean;
-  isUploadingMedia: boolean;
+  isProcessing: boolean;
+  isUploading: boolean;
   uploadProgress: number;
   abortController?: AbortController;
+  returnedVideoId?: string;
+}
 
-  cancelUpload?: () => void;
-  processVideoSelection: (file: File) => void;
-  handleFileUpload: () => void;
-  setResolutions: (res: VideoQuality[]) => void;
+interface VideoState {
+  videoFiles: VideoFile[];
+  globalLoading: boolean;
+
+  addVideoFiles: (files: File[]) => void;
+  removeVideoFile: (id: string) => void;
+  processVideoFile: (id: string) => Promise<void>;
+  setVideoResolutions: (id: string, resolutions: VideoQuality[]) => void;
+  uploadVideoFile: (id: string) => Promise<void>;
+  uploadAllVideos: () => Promise<void>;
+  cancelUpload: (id: string) => void;
   resetState: () => void;
 }
 
-function getVideoQualityFromDimensions(width: number, height: number) {
+function getVideoQualityFromDimensions(width: number, height: number): VideoQuality {
   if (width <= 256 && height <= 144) return "144p";
   if (width <= 426 && height <= 240) return "240p";
   if (width <= 640 && height <= 360) return "360p";
@@ -53,61 +62,91 @@ function getVideoQualityFromDimensions(width: number, height: number) {
   return "4K";
 }
 
+function generateId(): string {
+  return Math.random().toString(36).substr(2, 9);
+}
+
 export const useVideoStore = create<VideoState>((set, get) => ({
-  videoPreview: null,
-  videoFrame: null,
-  videoMetadata: null,
-  inputQuality: null,
-  resolutions: [],
-  videoLoading: false,
-  isUploadingMedia: false,
-  uploadProgress: 0,
-  videoFile: null,
-  abortController: new AbortController(),
+  videoFiles: [],
+  globalLoading: false,
 
-  setResolutions: (res) => {
-    set({ resolutions: res });
+  addVideoFiles: (files) => {
+    const newVideoFiles: VideoFile[] = files.map((file) => ({
+      id: generateId(),
+      file,
+      preview: URL.createObjectURL(file),
+      frame: null,
+      metadata: null,
+      inputQuality: null,
+      resolutions: [],
+      isProcessing: false,
+      isUploading: false,
+      uploadProgress: 0,
+    }));
+
+    set((state) => ({
+      videoFiles: [...state.videoFiles, ...newVideoFiles],
+    }));
+
+    // Process each video file
+    newVideoFiles.forEach((videoFile) => {
+      get().processVideoFile(videoFile.id);
+    });
   },
-  processVideoSelection: async (file) => {
-    if (!file) {
-      toast.error("No file selected", {
-        description: "Please select a video file",
-      });
-      return;
-    }
 
-    set({ videoLoading: true });
+  removeVideoFile: (id) => {
+    set((state) => {
+      const videoFile = state.videoFiles.find((v) => v.id === id);
+      if (videoFile) {
+        // Cancel upload if in progress
+        if (videoFile.isUploading && videoFile.abortController) {
+          videoFile.abortController.abort();
+        }
+        // Revoke object URL to prevent memory leaks
+        URL.revokeObjectURL(videoFile.preview);
+      }
+      return {
+        videoFiles: state.videoFiles.filter((v) => v.id !== id),
+      };
+    });
+  },
+
+  processVideoFile: async (id) => {
+    const { videoFiles } = get();
+    const videoFile = videoFiles.find((v) => v.id === id);
+    if (!videoFile) return;
+
+    // Validate file
     let isValid = true;
-    if (file.size > 300 * 1024 * 1024) {
-      // 300MB limit TODO: Adjust if needed
+    if (videoFile.file.size > 300 * 1024 * 1024) {
       isValid = false;
       toast.error("File too large", {
-        description: "Please upload a file smaller than 300MB",
+        description: `${videoFile.file.name}: Please upload a file smaller than 300MB`,
       });
     }
 
-    if (file.type !== "video/mp4") {
-      // MP4 format check TODO: Add more formats if needed
+    if (videoFile.file.type !== "video/mp4") {
       isValid = false;
       toast.error("Invalid file type", {
-        description: "Please upload a valid MP4 video file",
+        description: `${videoFile.file.name}: Please upload a valid MP4 video file`,
       });
     }
 
-    // TODO: Check the duration of the video for paid plans
     if (!isValid) {
-      set({ videoFile: null });
+      get().removeVideoFile(id);
       return;
     }
 
-    set({ videoFile: file });
-
-    const videoUrl = URL.createObjectURL(file);
-    set({ videoPreview: videoUrl });
+    // Set processing state
+    set((state) => ({
+      videoFiles: state.videoFiles.map((v) =>
+        v.id === id ? { ...v, isProcessing: true } : v
+      ),
+    }));
 
     try {
       const video = document.createElement("video");
-      video.src = URL.createObjectURL(file);
+      video.src = URL.createObjectURL(videoFile.file);
       video.preload = "metadata";
 
       const metadataPromise = new Promise<VideoMetadata>((resolve, reject) => {
@@ -119,8 +158,7 @@ export const useVideoStore = create<VideoState>((set, get) => ({
           };
           resolve(metadata);
         };
-        video.onerror = () =>
-          reject(new Error("Failed to load video metadata"));
+        video.onerror = () => reject(new Error("Failed to load video metadata"));
       });
 
       const framePromise = new Promise<string>((resolve, reject) => {
@@ -143,183 +181,215 @@ export const useVideoStore = create<VideoState>((set, get) => ({
         video.addEventListener("error", () => reject("Video load error"));
       });
 
-      const [metadata, frame] = await Promise.all([
-        metadataPromise,
-        framePromise,
-      ]);
+      const [metadata, frame] = await Promise.all([metadataPromise, framePromise]);
 
-      const quality = (() => {
-        if (metadata.width <= 256 && metadata.height <= 144) return "144p";
-        if (metadata.width <= 426 && metadata.height <= 240) return "240p";
-        if (metadata.width <= 640 && metadata.height <= 360) return "360p";
-        if (metadata.width <= 854 && metadata.height <= 480) return "480p";
-        if (metadata.width <= 1280 && metadata.height <= 720) return "720p";
-        if (metadata.width <= 1920 && metadata.height <= 1080) return "1080p";
-        if (metadata.width <= 2560 && metadata.height <= 1440) return "1440p";
-        return "4K";
-      })();
+      const detectedQuality = getVideoQualityFromDimensions(metadata.width, metadata.height);
+      const inputQualityIndex = VIDEO_QUALITIES.findIndex((q) => q.value === detectedQuality);
+      const availableQualities = VIDEO_QUALITIES.slice(0, inputQualityIndex + 1).map((q) => q.value);
 
-      const detectedQuality = getVideoQualityFromDimensions(
-        metadata.width,
-        metadata.height
-      );
-      const inputQualityIndex = VIDEO_QUALITIES.findIndex(
-        (q) => q.value === detectedQuality
-      );
-      const availableQualities = VIDEO_QUALITIES.slice(
-        0,
-        inputQualityIndex + 1
-      ).map((q) => q.value);
-      set({ resolutions: availableQualities });
+      set((state) => ({
+        videoFiles: state.videoFiles.map((v) =>
+          v.id === id
+            ? {
+                ...v,
+                metadata,
+                frame,
+                inputQuality: detectedQuality,
+                resolutions: availableQualities,
+                isProcessing: false,
+              }
+            : v
+        ),
+      }));
 
       toast.success("File analyzed", {
-        description: `Video quality detected: ${detectedQuality}. Available resolutions auto-selected.`,
-      });
-
-      set({
-        videoMetadata: metadata,
-        videoFrame: frame,
-        inputQuality: quality,
+        description: `${videoFile.file.name}: Quality detected as ${detectedQuality}`,
       });
     } catch (error) {
       toast.error("Failed to process video", {
-        description: "An error occurred while extracting metadata or frame",
+        description: `${videoFile.file.name}: An error occurred while extracting metadata`,
       });
-      set({ videoFile: null, videoMetadata: null, videoFrame: null });
-    } finally {
-      set({
-        videoLoading: false,
-      });
+      set((state) => ({
+        videoFiles: state.videoFiles.map((v) =>
+          v.id === id ? { ...v, isProcessing: false } : v
+        ),
+      }));
     }
   },
-  resetState: () => {
-    set({
-      videoFile: null,
-      videoPreview: null,
-      videoFrame: null,
-      videoMetadata: null,
-      inputQuality: null,
-      resolutions: [],
-      videoLoading: false,
-      isUploadingMedia: false,
-      uploadProgress: 0,
-    });
+
+  setVideoResolutions: (id, resolutions) => {
+    set((state) => ({
+      videoFiles: state.videoFiles.map((v) =>
+        v.id === id ? { ...v, resolutions } : v
+      ),
+    }));
   },
-  handleFileUpload: async () => {
-    const { videoFile } = get();
-    if (!videoFile) {
-      toast.error("No video file selected", {
-        description: "Please select a video file to upload",
-      });
+
+  uploadVideoFile: async (id) => {
+    const { videoFiles } = get();
+    const videoFile = videoFiles.find((v) => v.id === id);
+    if (!videoFile || !videoFile.metadata) {
+      toast.error("Video not ready for upload");
       return;
     }
 
     const prePayload = {
-      fileType: videoFile.type,
-      videoId: videoFile.name.split(".")[0],
-      videoTitle: videoFile.name,
-      videoSize: videoFile.size.toString(),
-      videoDuration: get().videoMetadata?.duration.toString() || "0",
-      resolutions: get().resolutions,
+      fileType: videoFile.file.type,
+      videoId: videoFile.file.name.split(".")[0],
+      videoTitle: videoFile.file.name,
+      videoSize: videoFile.file.size.toString(),
+      videoDuration: videoFile.metadata.duration.toString(),
+      resolutions: videoFile.resolutions,
     };
 
     try {
-      set({
-        isUploadingMedia: true,
-        uploadProgress: 0,
-      });
+      // Set uploading state
+      const abortController = new AbortController();
+      set((state) => ({
+        videoFiles: state.videoFiles.map((v) =>
+          v.id === id
+            ? { ...v, isUploading: true, uploadProgress: 0, abortController }
+            : v
+        ),
+      }));
+
       const response = await axios.post(
         `${BACKEND_URL}/api/v1/transcoding/preSignedUrl`,
-        {
-          ...prePayload,
-        },
-        {
-          withCredentials: true,
-        }
+        prePayload,
+        { withCredentials: true }
       );
 
       if (!response) {
-        throw new Error(`Failed to get presigned URL for ${videoFile.name}`);
+        throw new Error(`Failed to get presigned URL for ${videoFile.file.name}`);
       }
 
-      set({
-        abortController: new AbortController(),
-      });
-
       const { url, jobId } = response.data;
-      set({ returnedVideoId: jobId });
-      const uploadResponse = await axios.put(url, videoFile, {
-        headers: {
-          "Content-Type": videoFile.type,
-        },
-        signal: get().abortController?.signal,
+
+      // Update with job ID
+      set((state) => ({
+        videoFiles: state.videoFiles.map((v) =>
+          v.id === id ? { ...v, returnedVideoId: jobId } : v
+        ),
+      }));
+
+      const uploadResponse = await axios.put(url, videoFile.file, {
+        headers: { "Content-Type": videoFile.file.type },
+        signal: abortController.signal,
         onUploadProgress: (progressEvent) => {
           const progress = Math.round(
             (progressEvent.loaded * 100) / (progressEvent.total || 1)
           );
-          toast.loading(`Uploading ${videoFile.name}: ${progress}%`, {
-            id: "upload-progress",
-          });
-          set({ uploadProgress: progress });
+          set((state) => ({
+            videoFiles: state.videoFiles.map((v) =>
+              v.id === id ? { ...v, uploadProgress: progress } : v
+            ),
+          }));
         },
         withCredentials: true,
       });
 
       if (!uploadResponse.status) {
-        toast.error("Upload failed", {
-          description: "An error occurred while uploading the video",
-        });
-        set({
-          isUploadingMedia: false,
-          uploadProgress: 0,
-        });
-        throw new Error(`Failed to upload ${videoFile.name}`);
+        throw new Error(`Failed to upload ${videoFile.file.name}`);
       }
 
       toast.success("Upload successful", {
-        description: `Video ${videoFile.name} uploaded successfully!`,
+        description: `${videoFile.file.name} uploaded successfully!`,
       });
-      toast.dismiss("upload-progress");
+
+      // Reset upload state
+      set((state) => ({
+        videoFiles: state.videoFiles.map((v) =>
+          v.id === id
+            ? { ...v, isUploading: false, uploadProgress: 0, abortController: undefined }
+            : v
+        ),
+      }));
     } catch (error: any) {
       if (error.name === "AbortError") {
         return;
       }
       toast.error("Upload failed", {
-        description:
-          error.message || "An error occurred while uploading the video",
+        description: `${videoFile.file.name}: ${error.message || "Upload error"}`,
       });
+      set((state) => ({
+        videoFiles: state.videoFiles.map((v) =>
+          v.id === id
+            ? { ...v, isUploading: false, uploadProgress: 0, abortController: undefined }
+            : v
+        ),
+      }));
+    }
+  },
+
+  uploadAllVideos: async () => {
+    const { videoFiles } = get();
+    const readyVideos = videoFiles.filter(
+      (v) => !v.isProcessing && !v.isUploading && v.resolutions.length > 0 && v.metadata
+    );
+
+    if (readyVideos.length === 0) {
+      toast.error("No videos ready for upload");
+      return;
+    }
+
+    set({ globalLoading: true });
+
+    try {
+      await Promise.all(readyVideos.map((video) => get().uploadVideoFile(video.id)));
     } finally {
-      set({
-        isUploadingMedia: false,
-        uploadProgress: 0,
+      set({ globalLoading: false });
+    }
+  },
+
+  cancelUpload: async (id) => {
+    const { videoFiles } = get();
+    const videoFile = videoFiles.find((v) => v.id === id);
+    
+    if (videoFile?.isUploading && videoFile.abortController) {
+      videoFile.abortController.abort();
+      
+      set((state) => ({
+        videoFiles: state.videoFiles.map((v) =>
+          v.id === id
+            ? { ...v, isUploading: false, uploadProgress: 0, abortController: undefined }
+            : v
+        ),
+      }));
+
+      if (videoFile.returnedVideoId) {
+        try {
+          await axios.put(
+            `${BACKEND_URL}/api/v1/transcoding/status/${videoFile.returnedVideoId}`,
+            {
+              errorMessage: "Upload cancelled by user",
+              status: "CANCELED",
+            },
+            { withCredentials: true }
+          );
+        } catch (error) {
+          console.error("Failed to update cancellation status:", error);
+        }
+      }
+
+      toast.error("Upload cancelled", {
+        description: `${videoFile.file.name} upload has been cancelled.`,
       });
     }
   },
-  cancelUpload: async () => {
-    const { abortController, isUploadingMedia } = get();
-    if (isUploadingMedia && abortController) {
-      abortController.abort();
-      toast.error("Upload cancelled", {
-        description: "The video upload has been cancelled.",
-      });
-      set({
-        isUploadingMedia: false,
-        uploadProgress: 0,
-        abortController: undefined,
-      });
 
-      await axios.put(
-        `${BACKEND_URL}/api/v1/transcoding/status/${get().returnedVideoId}`,
-        {
-          errorMessage: "Upload cancelled by user",
-          status: "CANCELED",
-        },
-        {
-          withCredentials: true,
-        }
-      );
+  resetState: () => {
+    const { videoFiles } = get();
+    // Clean up object URLs
+    videoFiles.forEach((video) => {
+      URL.revokeObjectURL(video.preview);
+      if (video.isUploading && video.abortController) {
+        video.abortController.abort();
+      }
+    });
 
-      toast.dismiss("upload-progress");
-    }
+    set({
+      videoFiles: [],
+      globalLoading: false,
+    });
   },
 }));
