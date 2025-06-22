@@ -1,5 +1,6 @@
 import { DashboardNavbar } from "@/components/Dashboard/DashboardNavbar";
 import type { Metadata } from "next";
+import { UploadBox } from "./upload/UploadBox";
 
 export const metadata: Metadata = {
   title: "Voxer | Dashboard",
@@ -17,6 +18,7 @@ export default function DashboardLayout({
     >
       <DashboardNavbar />
       <div className="">{children}</div>
+      <UploadBox />
     </div>
   );
 }

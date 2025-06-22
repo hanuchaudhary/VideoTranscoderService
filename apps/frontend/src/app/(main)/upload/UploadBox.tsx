@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState, useEffect } from "react";
 import {
   ChevronDown,
@@ -10,27 +12,6 @@ import { Button } from "@/components/ui/button";
 import { IconMovie } from "@tabler/icons-react";
 import { useVideoStore } from "@/store/videoStore";
 import { AnimatePresence, motion } from "motion/react";
-
-const dummyVideos = [
-  {
-    id: "1",
-    file: { name: "video1.mp4" },
-    isUploading: true,
-    uploadProgress: 50,
-  },
-  {
-    id: "2",
-    file: { name: "video2.mp4" },
-    isUploading: false,
-    uploadProgress: 100,
-  },
-  {
-    id: "3",
-    file: { name: "video3.mp4" },
-    isUploading: false,
-    uploadProgress: 0,
-  },
-];
 
 export const UploadBox = () => {
   const [isMinimized, setIsMinimized] = useState(false);
@@ -76,7 +57,7 @@ export const UploadBox = () => {
     }
   }, [hasActiveUploads]);
 
-  // if (!isVisible || allRelevantVideos.length === 0) return null;
+  if (!isVisible || allRelevantVideos.length === 0) return null;
 
   const getVideoStatus = (video: any) => {
     if (video.isUploading) {
@@ -144,14 +125,14 @@ export const UploadBox = () => {
             transition={{ duration: 0.1 }}
             animate={{ opacity: 1, height: "auto" }}
           >
-            {dummyVideos.length > 1 && (
+            {allRelevantVideos.length > 1 && (
               <div className="p-3 sm:p-4 border-b bg-muted/10">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs sm:text-sm font-medium">
                     Overall Progress
                   </span>
                   <span className="text-xs sm:text-sm text-muted-foreground">
-                    {completedVideos.length}/{dummyVideos.length}{" "}
+                    {completedVideos.length}/{allRelevantVideos.length}{" "}
                     <span className="hidden sm:inline">completed</span>
                   </span>
                 </div>
@@ -165,10 +146,10 @@ export const UploadBox = () => {
             )}
             <div className="p-3 sm:p-4 space-y-3">
               <div className="text-xs sm:text-sm text-muted-foreground">
-                All ({dummyVideos.length})
+                All ({allRelevantVideos.length})
               </div>
 
-              {dummyVideos.map((video) => {
+              {allRelevantVideos.map((video) => {
                 const status = getVideoStatus(video);
 
                 return (

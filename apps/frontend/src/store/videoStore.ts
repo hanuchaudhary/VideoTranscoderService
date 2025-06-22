@@ -183,9 +183,12 @@ export const useVideoStore = create<VideoState>((set, get) => ({
 
       const [metadata, frame] = await Promise.all([metadataPromise, framePromise]);
 
+      // TODO: Maybe change the quality configuration 
       const detectedQuality = getVideoQualityFromDimensions(metadata.width, metadata.height);
       const inputQualityIndex = VIDEO_QUALITIES.findIndex((q) => q.value === detectedQuality);
-      const availableQualities = VIDEO_QUALITIES.slice(0, inputQualityIndex + 1).map((q) => q.value);
+      const availableQualities = VIDEO_QUALITIES.slice(0, inputQualityIndex + 1)
+        .map((q) => q.value)
+        .filter((quality) => quality !== detectedQuality);
 
       set((state) => ({
         videoFiles: state.videoFiles.map((v) =>
@@ -243,7 +246,6 @@ export const useVideoStore = create<VideoState>((set, get) => ({
     };
 
     try {
-      // Set uploading state
       const abortController = new AbortController();
       set((state) => ({
         videoFiles: state.videoFiles.map((v) =>
@@ -265,7 +267,6 @@ export const useVideoStore = create<VideoState>((set, get) => ({
 
       const { url, jobId } = response.data;
 
-      // Update with job ID
       set((state) => ({
         videoFiles: state.videoFiles.map((v) =>
           v.id === id ? { ...v, returnedVideoId: jobId } : v

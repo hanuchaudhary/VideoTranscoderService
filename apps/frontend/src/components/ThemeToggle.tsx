@@ -1,14 +1,14 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { Moon, Sun } from "lucide-react";
+import { IconMoonFilled, IconSunFilled } from "@tabler/icons-react";
 import { motion } from "motion/react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 const themes = [
-  { key: "light", icon: Sun, label: "Light theme" },
-  { key: "dark", icon: Moon, label: "Dark theme" },
+  { key: "light", icon: IconSunFilled, label: "Light theme" },
+  { key: "dark", icon: IconMoonFilled, label: "Dark theme" },
 ];
 
 export const ThemeSwitcher = () => {

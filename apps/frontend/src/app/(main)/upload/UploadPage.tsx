@@ -7,9 +7,6 @@ import {
   X,
   Check,
   Loader2,
-  Play,
-  Trash2,
-  CloudUpload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,8 +15,9 @@ import {
   VIDEO_QUALITIES,
   VideoQuality,
 } from "@/store/videoStore";
-import { UploadBox } from "./UploadBox";
 import Link from "next/link";
+import { VideoPopup } from "@/components/ui/videoPopup";
+import { IconCloudUpload, IconTrashXFilled } from "@tabler/icons-react";
 
 export function UploadPage() {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -68,11 +66,11 @@ export function UploadPage() {
 
       setVideoResolutions(videoId, newResolutions);
 
-      toast.info(
-        video.resolutions.includes(quality)
-          ? `Unselected ${quality} for ${video.file.name}`
-          : `Selected ${quality} for ${video.file.name}`
-      );
+      // toast.info(
+      //   video.resolutions.includes(quality)
+      //     ? `Unselected ${quality} for ${video.file.name}`
+      //     : `Selected ${quality} for ${video.file.name}`
+      // );
     } else {
       toast.error(
         `Cannot select ${quality} resolution for ${video.file.name}. Higher qualities are disabled.`
@@ -121,12 +119,12 @@ export function UploadPage() {
         </Link>
       </div>
 
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex md: items-center justify-between">
         <div>
-          <h1 className="md:text-2xl text-xl font-semibold">
+          <h1 className="md:text-2xl text- font-semibold">
             Ready to transcode your videos?
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm md:block hidden text-muted-foreground">
             Upload multiple video files and select transcoding resolutions for
             each.
           </p>
@@ -145,6 +143,7 @@ export function UploadPage() {
             <Button
               type="button"
               variant="default"
+              size={"sm"}
               onClick={() => fileInputRef.current?.click()}
               disabled={globalLoading}
             >
@@ -160,7 +159,6 @@ export function UploadPage() {
         </div>
       )}
 
-      <UploadBox />
 
       <div className="space-y-6">
         {videoFiles.length === 0 && (
@@ -195,7 +193,7 @@ export function UploadPage() {
               <Button
                 type="button"
                 variant="default"
-                onClick={() => fileInputRef.current?.click()}
+                // onClick={() => fileInputRef.current?.click()}
                 disabled={globalLoading}
               >
                 Select Video Files
@@ -211,29 +209,28 @@ export function UploadPage() {
           <div className="h-[10rem] rounded-full w-[60rem] z-1 bg-gradient-to-b blur-[6rem] from-yellow-600 to-sky-500"></div>
         </div>
 
-        {/* Video Files List */}
         {videoFiles.length > 0 && (
           <div className="space-y-4 relative z-10">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
+              <h2 className="md:text-lg font-semibold">
                 Uploaded Videos ({videoFiles.length})
               </h2>
-              <div className="flex gap-2">
+              <div className="flex md:flex-row flex-col gap-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={resetState}
                   disabled={totalUploading > 0}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <IconTrashXFilled className="h-4 w-4 mr-1" />
                   Clear All
                 </Button>
                 <Button
                   onClick={uploadAllVideos}
                   disabled={totalReadyVideos === 0 || totalUploading > 0}
-                  className="min-w-[140px]"
+                  size={"sm"}
                 >
-                  <CloudUpload className="h-4 w-4 mr-2" />
+                  <IconCloudUpload className="h-4 w-4 mr-1" />
                   Upload All ({totalReadyVideos})
                 </Button>
               </div>
@@ -241,24 +238,22 @@ export function UploadPage() {
 
             <div className="grid gap-6">
               {videoFiles.map((video) => (
-                <div key={video.id} className="border p-4 bg-secondary/30 backdrop-blur-sm">
-                  <div className="flex gap-4">
-                    {/* Video Preview */}
-                    <div className="w-48 h-32 relative flex-shrink-0">
+                <div
+                  key={video.id}
+                  className="border p-4 bg-secondary/30 backdrop-blur-sm"
+                >
+                  <div className="flex md:flex-row flex-col gap-4">
+                    <div className="md:w-48 md:h-32 md:block hidden relative flex-shrink-0">
                       {video.isProcessing ? (
                         <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
                           <Loader2 className="h-6 w-6 animate-spin" />
                         </div>
                       ) : video.frame ? (
-                        <div className="relative w-full h-full rounded-lg overflow-hidden">
-                          <img
-                            src={video.frame}
-                            alt="Video frame"
-                            className="w-full h-full object-cover"
+                        <div className="relative w-full h-full overflow-hidden">
+                          <VideoPopup
+                            thumbnail={video.frame}
+                            video={video.preview}
                           />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                            <Play className="h-6 w-6 text-white" />
-                          </div>
                         </div>
                       ) : (
                         <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center">
@@ -269,7 +264,6 @@ export function UploadPage() {
                       )}
                     </div>
 
-                    {/* Video Info and Controls */}
                     <div className="flex-1 space-y-3">
                       <div className="flex items-start justify-between">
                         <div>
@@ -306,7 +300,6 @@ export function UploadPage() {
                         </div>
                       </div>
 
-                      {/* Upload Progress */}
                       {video.isUploading && (
                         <div className="space-y-2">
                           <div className="flex items-center justify-between text-xs">
@@ -329,13 +322,12 @@ export function UploadPage() {
                         </div>
                       )}
 
-                      {/* Resolution Selection */}
                       {!video.isProcessing &&
                         !video.isUploading &&
                         video.inputQuality && (
                           <div className="space-y-3">
                             <div>
-                              <h4 className="text-sm font-medium mb-2">
+                              <h4 className="text-sm font-medium">
                                 Output Resolutions
                               </h4>
                               <p className="text-xs text-muted-foreground mb-3">
@@ -355,9 +347,9 @@ export function UploadPage() {
                                 );
 
                                 return (
-                                  <button
+                                  <Button
                                     key={quality.value}
-                                    type="button"
+                                    variant={"box"}
                                     onClick={() =>
                                       handleQualityToggle(
                                         video.id,
@@ -366,25 +358,26 @@ export function UploadPage() {
                                     }
                                     disabled={disabled}
                                     className={`
-                                    relative p-2 border cursor-pointer rounded text-left text-xs transition-all
+                                    relative p-2 border border-muted-foreground cursor-pointer text-left text-xs transition-all
                                     ${
                                       disabled
                                         ? "border-muted bg-muted/50 text-muted-foreground cursor-not-allowed opacity-50"
                                         : selected
-                                          ? "border-primary bg-primary/10 text-primary"
+                                          ? "border-primary/80 bg-primary/10 text-primary"
                                           : "border-border bg-background hover:border-primary/50 hover:bg-primary/5"
                                     }
                                   `}
                                   >
                                     {selected && !disabled && (
-                                      <div className="absolute top-1 right-1">
-                                        <Check className="h-3 w-3 text-primary" />
+                                      <div className="absolute md:block hidden top-2 right-2">
+                                        <Check className="h-3 w-3 text-muted-foreground" />
                                       </div>
                                     )}
                                     <div className="font-medium">
-                                      {quality.label}
+                                      <span className="md:block hidden">{quality.label}</span>
+                                      <span className="md:hidden block">{quality.label.split(" ")[0]}</span>
                                     </div>
-                                  </button>
+                                  </Button>
                                 );
                               })}
                             </div>

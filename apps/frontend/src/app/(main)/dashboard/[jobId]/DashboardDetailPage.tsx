@@ -79,8 +79,8 @@ export function DashboardDetailPage({ jobId }: { jobId: string }) {
           </Button>
         </div>
 
-        <div className="flex border">
-          <div className="relative w-full max-w-lg h-96 bg-secondary overflow-">
+        <div className="flex md:flex-row flex-col border">
+          <div className="relative w-full max-w-lg md:h-96 bg-secondary overflow-">
             <video
               src={"singleTranscodingJob.videoUrl"}
               controls={false}
