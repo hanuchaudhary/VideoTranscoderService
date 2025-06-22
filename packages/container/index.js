@@ -9,6 +9,7 @@ import dotenv from "dotenv";
 import ffmpeg from "fluent-ffmpeg";
 import redis from "ioredis";
 
+//TODO: save to s3 as zip file
 const redisClient = new redis(process.env.REDIS_URL);
 
 const publishToRedis = async (data) => {
@@ -31,7 +32,7 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION || "ap-south-1",
 });
 
-const USER_RESOLUTIONS = JSON.parse(process.env.RESOLUTIONS || "[]"); // e.g., ["720p", "1080p"]
+const USER_RESOLUTIONS = JSON.parse(process.env.RESOLUTIONS || "[]");
 console.log(`Using user-defined resolutions: ${USER_RESOLUTIONS}`);
 
 // Resolutions for transcoding TODO: Add more resolutions like 4K, 8K, 240p etc. ✅
@@ -168,7 +169,6 @@ const init = async () => {
                 `Uploaded ${resolution.name} to s3://${outputBucket}/${outputKey}`
               );
 
-              // Remove the temporary transcoded file
               await fs.unlink(outputPath);
               console.log(`Cleaned up temporary file: ${outputPath}`);
 

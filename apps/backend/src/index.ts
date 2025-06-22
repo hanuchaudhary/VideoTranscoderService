@@ -322,5 +322,5 @@ const pollForMessages = async () => {
 const PORT = process.env.PORT || 8000;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  // pollForMessages();
+  pollForMessages();
 });

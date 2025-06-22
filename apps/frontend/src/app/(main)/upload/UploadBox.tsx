@@ -86,12 +86,7 @@ export const UploadBox = () => {
             {isMinimized ? ` (${allRelevantVideos.length})` : ""}
           </h4>
           {hasActiveUploads && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              <span className="hidden sm:inline">
-                {uploadingVideos.length} active
-              </span>
-              <span className="sm:hidden">{uploadingVideos.length}</span>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground h-2 w-2 rounded-full bg-yellow-600">
             </div>
           )}
         </div>
@@ -201,7 +196,7 @@ export const UploadBox = () => {
               <div className="p-3 sm:p-4 border-t bg-amber-50/50 dark:bg-amber-950/20">
                 <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 text-xs">
                   <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                  <span className="text-xs sm:text-sm">
+                  <span className="text-xs">
                     <span className="hidden sm:inline">
                       Do not close or refresh this page until all uploads are
                       complete
