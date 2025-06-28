@@ -17,6 +17,18 @@ type RouteState = {
   isFetchingSingleJob?: boolean;
 
   deleteTranscodingJob?: (jobId: string) => Promise<void>;
+
+  subscription?: {
+    id: string;
+    userId: string;
+    planId: string;
+    status: string;
+    startDate: Date;
+    endDate: Date;
+    nextBillingDate: Date;
+  };
+  fetchSubscription?: () => Promise<void>;
+  isFetchingSubscription?: boolean;
 };
 
 export const useRouteStore = create<RouteState>((set) => ({
@@ -90,6 +102,33 @@ export const useRouteStore = create<RouteState>((set) => ({
     } catch (error) {
       console.error("Error deleting transcoding job:", error);
     }
-  }
+  },
+
+  subscription: undefined,
+  isFetchingSubscription: false,
+  fetchSubscription: async () => {
+    set({ isFetchingSubscription: true });
+    try {
+      const response = await axios.get(
+        `${BACKEND_URL}/api/v1/payment/subscription`,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (response.status !== 200) {
+        throw new Error("Failed to fetch subscription");
+      }
+      const data = response.data;
+
+      set({ subscription: data });
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+    } finally {
+      set({ isFetchingSubscription: false });
+    }
+  },
 
 }));

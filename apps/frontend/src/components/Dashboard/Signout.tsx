@@ -7,7 +7,6 @@ import { authClient } from "@/lib/authClient";
 import { toast } from "sonner";
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -21,15 +20,15 @@ export function Signout() {
   const [open, setOpen] = useState(false);
 
   const handleSignOut = async () => {
-    // await authClient.signOut({
-    //   fetchOptions: {
-    //     onSuccess: () => {
-    //       toast.success("Signed out successfully");
-    //       router.push("/");
-    //     },
-    //   },
-    // });
-    // setOpen(false);
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          toast.success("Signed out successfully");
+          router.push("/");
+        },
+      },
+    });
+    setOpen(false);
   };
 
   return (

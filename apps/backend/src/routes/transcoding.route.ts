@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { authenticateUser } from "../config/middleware";
+import { authenticateUser, subscriptionMiddleware } from "../config/middleware";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl as cloudfrontGetSignedUrl } from "@aws-sdk/cloudfront-signer";
 import { s3Client } from "../config/config";
@@ -12,6 +12,8 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 export const transcodingRouter: Router = Router();
 transcodingRouter.use(authenticateUser);
+transcodingRouter.use(subscriptionMiddleware);
+
 
 export const preSignedUrlSchema = z.object({
   fileType: z.string().min(1, "File type is required"),

@@ -204,3 +204,51 @@ paymentRouter.post(
     }
   }
 );
+
+// Get user's transactions
+paymentRouter.get(
+  "/transactions",
+  authenticateUser,
+  async (req: Request, res: Response) => {
+    try {
+      const userTransactions = await db
+        .select()
+        .from(transaction)
+        .where(eq(transaction.userId, req.user.id));
+
+      res.status(200).json({
+        transactions: userTransactions,
+      });
+    } catch (error) {
+      console.error("Error fetching transactions:", error);
+      res.status(500).json({ error: "Failed to fetch transactions" });
+    }
+  }
+);
+
+// Get user's active subscription
+paymentRouter.get(
+  "/subscription",
+  authenticateUser,
+  async (req: Request, res: Response) => {
+    try {
+      const activeSubscription = await db
+        .select()
+        .from(subscription)
+        .where(eq(subscription.userId, req.user.id))
+        .limit(1);
+
+      if (activeSubscription.length === 0) {
+        res.status(404).json({ error: "No subscription found" });
+        return;
+      }
+
+      res.status(200).json({
+        subscription: activeSubscription[0],
+      });
+    } catch (error) {
+      console.error("Error fetching subscription:", error);
+      res.status(500).json({ error: "Failed to fetch subscription" });
+    }
+  }
+);
