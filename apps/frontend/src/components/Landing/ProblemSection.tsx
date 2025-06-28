@@ -14,14 +14,14 @@ export function ProblemSection() {
             </button>
           </div>
         </div>
-        <p className="border-l md:p-8 p-4 text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1 hover:bg-secondary/40">
+        <p className="border-l md:p-8 p-4 text-muted-foreground md:text-lg md:block flex flex-col text-base font-semibold gap-1 hover:bg-secondary/40">
           Slow transcoding and format issues slowing down your YouTube or social media uploads? Our service delivers
           lightning-fast conversions to 144p–4K with perfect file sizes.
         </p>
       </div>
       <div className="flex items-center justify-between">
         <div className="md:p-8 p-4 text-left border-r hover:bg-secondary/40">
-          <p className="text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1">
+          <p className="text-muted-foreground md:text-lg md:block flex flex-col text-base font-semibold gap-1">
             <span className="dark:text-white text-black">
               <Pill classname="dark:text-purple-400 text-purple-800 bg-purple-500/30" text="Businesses" />{" "}
             </span>
@@ -30,7 +30,7 @@ export function ProblemSection() {
           </p>
         </div>
         <div className="md:p-8 p-4 text-left hover:bg-secondary/40">
-          <p className="text-muted-foreground md:text-xl md:block flex flex-col text-base font-semibold gap-1">
+          <p className="text-muted-foreground md:text-lg md:block flex flex-col text-base font-semibold gap-1">
             <span className="dark:text-white text-black">
               <Pill classname="dark:text-green-400 text-green-800 bg-green-500/30" text="Developers" />{" "}
             </span>
