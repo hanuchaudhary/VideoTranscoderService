@@ -13,7 +13,6 @@ interface Plan {
   credits: string;
   features: string[];
   buttonText: string;
-  buttonVariant: "outline" | "primary";
 }
 
 export function PricingSection() {
@@ -35,7 +34,6 @@ export function PricingSection() {
         "Up to 10 uploaded videos",
       ],
       buttonText: "Start for Free",
-      buttonVariant: "outline",
     },
     {
       title: "Starter",
@@ -52,7 +50,6 @@ export function PricingSection() {
         "Add-on: $0.05 per additional 1000 minutes",
       ],
       buttonText: "Start Building",
-      buttonVariant: "primary",
     },
     {
       title: "Enterprise",
@@ -70,7 +67,6 @@ export function PricingSection() {
         "Steep usage discounts above $3K/month",
       ],
       buttonText: "Talk to Us",
-      buttonVariant: "outline",
     },
   ];
 
@@ -132,7 +128,7 @@ export function PricingSection() {
               ))}
             </div>
             {pathname === "/pricing" ? (
-              <SubscriptionDialog index={index} />
+              <SubscriptionDialog index={index} planText={plan.buttonText} />
             ) : (
               <Link
                 href="/pricing"

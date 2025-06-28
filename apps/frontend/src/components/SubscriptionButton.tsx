@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +37,13 @@ export const subscriptionSchema = z.object({
 
 type SubscriptionFormData = z.infer<typeof subscriptionSchema>;
 
-export function SubscriptionDialog({ index }: { index: number }) {
+export function SubscriptionDialog({
+  index,
+  planText,
+}: {
+  index: number;
+  planText: string;
+}) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -86,107 +91,128 @@ export function SubscriptionDialog({ index }: { index: number }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          className={`mt-auto py-5 border-t w-full font-semibold gap-4 flex items-center cursor-pointer justify-center leading-none ${index === 1 ? "bg-blue-600 hover:bg-blue-500 text-white" : "hover:bg-secondary/30"}`}
+      {index === 1 ? (
+        <DialogTrigger
+          className={`mt-auto py-5 border-t w-full font-semibold gap-4 flex items-center cursor-pointer justify-center leading-none bg-blue-600 hover:bg-blue-500 text-white`}
         >
-          Subscribe Now
+          {planText}
+        </DialogTrigger>
+      ) : (
+        <button
+          className={`mt-auto py-5 border-t w-full font-semibold gap-4 flex items-center cursor-pointer justify-center leading-none hover:bg-secondary/30`}
+        >
+          {planText}
         </button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[525px] rounded-none bg-background/60 backdrop-blur-md">
-        <DialogHeader>
-          <DialogTitle>Subscription Details</DialogTitle>
+      )}
+      <DialogContent className="sm:max-w-[555px] font-mono p-0 rounded-none">
+        <DialogHeader className="px-6 pt-14 pb-5">
+          <h2 className="text-2xl bg-gradient-to-b from-orange-500 to-orange-400 bg-clip-text text-transparent font-semibold mb-2">
+            $4.99/month{" "}
+            <span className="text-sm text-muted-foreground">
+              (billed monthly)
+            </span>
+          </h2>
+
+          <DialogTitle className="md:text-xl">Subscription Details</DialogTitle>
           <DialogDescription>
-            Please provide your address information to complete your
-            subscription.
+            Please enter your billing details.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="street"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Street Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123 Main Street" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <div className="p-6 space-y-6">
               <FormField
                 control={form.control}
-                name="city"
+                name="street"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>City</FormLabel>
+                    <FormLabel>Street Address</FormLabel>
                     <FormControl>
-                      <Input placeholder="New York" {...field} />
+                      <Input placeholder="123 Main Street" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="state"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>State</FormLabel>
-                    <FormControl>
-                      <Input placeholder="NY" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>City</FormLabel>
+                      <FormControl>
+                        <Input placeholder="New York" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem className="">
+                      <FormLabel>State</FormLabel>
+                      <FormControl>
+                        <Input placeholder="NY" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="country"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Country</FormLabel>
+                      <FormControl>
+                        <Input placeholder="United States" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="zipcode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Zip Code</FormLabel>
+                      <FormControl>
+                        <Input placeholder="10001" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="country"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Country</FormLabel>
-                    <FormControl>
-                      <Input placeholder="United States" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="zipcode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Zip Code</FormLabel>
-                    <FormControl>
-                      <Input placeholder="10001" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <DialogFooter>
-              <Button
+            <DialogFooter className="w-full border-t grid grid-cols-2 gap-0">
+              <button
+                className={`py-5 w-full font-semibold leading-none hover:bg-secondary/30 border-r cursor-pointer`}
                 type="button"
-                variant="outline"
-                onClick={() => setOpen(false)}
+                onClick={() => {
+                  setOpen(false);
+                  form.reset();
+                }}
                 disabled={isSubmitting}
               >
                 Cancel
-              </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              </button>
+              <button
+                type="submit"
+                className={`w-full font-semibold leading-none bg-blue-600 hover:bg-blue-500 text-white cursor-pointer`}
+                disabled={isSubmitting}
+              >
                 {isSubmitting && (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 )}
                 {isSubmitting ? "Subscribing..." : "Subscribe"}
-              </Button>
+              </button>
             </DialogFooter>
           </form>
         </Form>

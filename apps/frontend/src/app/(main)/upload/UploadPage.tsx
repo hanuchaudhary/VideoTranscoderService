@@ -2,12 +2,7 @@
 
 import React from "react";
 import { useDropzone } from "react-dropzone";
-import {
-  Upload,
-  X,
-  Check,
-  Loader2,
-} from "lucide-react";
+import { Upload, X, Check, Loader2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -18,8 +13,10 @@ import {
 import Link from "next/link";
 import { VideoPopup } from "@/components/ui/videoPopup";
 import { IconCloudUpload, IconTrashXFilled } from "@tabler/icons-react";
+import Image from "next/image";
 
 export function UploadPage() {
+  const [currentVideo, setCurrentVideo] = React.useState<File | null>(null);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const {
     videoFiles,
@@ -65,12 +62,6 @@ export function UploadPage() {
         : [...video.resolutions, quality];
 
       setVideoResolutions(videoId, newResolutions);
-
-      // toast.info(
-      //   video.resolutions.includes(quality)
-      //     ? `Unselected ${quality} for ${video.file.name}`
-      //     : `Selected ${quality} for ${video.file.name}`
-      // );
     } else {
       toast.error(
         `Cannot select ${quality} resolution for ${video.file.name}. Higher qualities are disabled.`
@@ -105,11 +96,27 @@ export function UploadPage() {
   const totalReadyVideos = videoFiles.filter(
     (v) => !v.isProcessing && v.resolutions.length > 0 && v.metadata
   ).length;
-
   const totalUploading = videoFiles.filter((v) => v.isUploading).length;
+
+  const handleCloseVideoModal = () => {
+    setCurrentVideo(null);
+  };
+
+  React.useEffect(() => {
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && currentVideo) {
+        handleCloseVideoModal();
+      }
+    };
+    if (currentVideo) {
+      document.addEventListener("keydown", handleEsc);
+    }
+    return () => document.removeEventListener("keydown", handleEsc);
+  }, [currentVideo]);
 
   return (
     <div className="relative px-2 md:py-8 max-w-7xl mx-auto">
+      <VideoPopup onCloseModal={handleCloseVideoModal} video={currentVideo!} />
       <div className="flex items-center mb-4 text-xs select-none">
         <Link
           className="hover:text-foreground text-muted-foreground transition-colors border-b border-primary/70 hover:border-primary leading-4 uppercase"
@@ -159,13 +166,12 @@ export function UploadPage() {
         </div>
       )}
 
-
       <div className="space-y-6">
         {videoFiles.length === 0 && (
           <div {...getRootProps()}>
             <input {...getInputProps()} />
             <div
-              className={`relative z-20 flex flex-col items-center justify-center h-80 border-2 dark:border-border border-neutral-300/50 font-mono ${
+              className={`relative flex flex-col items-center justify-center h-80 border-2 dark:border-border border-neutral-300/50 font-mono ${
                 isDragActive
                   ? "border-blue-600 bg-primary/5"
                   : "border-border bg-secondary/30"
@@ -210,7 +216,7 @@ export function UploadPage() {
         </div>
 
         {videoFiles.length > 0 && (
-          <div className="space-y-4 relative z-10">
+          <div className="space-y-4 z-10">
             <div className="flex items-center justify-between">
               <h2 className="md:text-lg font-semibold">
                 Uploaded Videos ({videoFiles.length})
@@ -240,20 +246,38 @@ export function UploadPage() {
               {videoFiles.map((video) => (
                 <div
                   key={video.id}
-                  className="border p-4 bg-secondary/30 backdrop-blur-sm"
+                  className="border p-4 bg-secondary/30 backdrop-blur-sm relative z-10"
                 >
                   <div className="flex md:flex-row flex-col gap-4">
-                    <div className="md:w-48 md:h-32 md:block hidden relative flex-shrink-0">
+                    <div className="md:w-48 md:h-32 md:block hidden flex-shrink-0">
                       {video.isProcessing ? (
-                        <div className="w-full h-full flex items-center justify-center bg-muted rounded-lg">
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
                           <Loader2 className="h-6 w-6 animate-spin" />
                         </div>
                       ) : video.frame ? (
-                        <div className="relative w-full h-full overflow-hidden">
-                          <VideoPopup
-                            thumbnail={video.frame}
-                            video={video.preview}
-                          />
+                        <div
+                          onClick={() => {
+                            setCurrentVideo(video.file);
+                          }}
+                          className="flex items-center"
+                        >
+                          <div className="relative md:w-48 md:h-32 overflow-hidden flex-shrink-0">
+                            <Image
+                              src={video.frame}
+                              alt="Video thumbnail"
+                              fill
+                              className="object-cover"
+                              sizes="70px"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="p-1 rounded-full bg-background shadow-sm border border-border">
+                                <Play
+                                  size={10}
+                                  className="fill-foreground text-foreground ml-0.5"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       ) : (
                         <div className="w-full h-full bg-muted rounded-lg flex items-center justify-center">
@@ -374,8 +398,12 @@ export function UploadPage() {
                                       </div>
                                     )}
                                     <div className="font-medium">
-                                      <span className="md:block hidden">{quality.label}</span>
-                                      <span className="md:hidden block">{quality.label.split(" ")[0]}</span>
+                                      <span className="md:block hidden">
+                                        {quality.label}
+                                      </span>
+                                      <span className="md:hidden block">
+                                        {quality.label.split(" ")[0]}
+                                      </span>
                                     </div>
                                   </Button>
                                 );
