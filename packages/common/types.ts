@@ -14,6 +14,15 @@ export enum JobStatus {
   FAILED = "FAILED",
 }
 
+export enum PaymentStatus {
+  ACTIVE = "ACTIVE",
+  PENDING = "PENDING",
+  EXPIRED = "EXPIRED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
+  SUCCEEDED = "SUCCEEDED",
+}
+
 export enum LogLevel {
   INFO = "INFO",
   WARN = "WARN",

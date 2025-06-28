@@ -30,13 +30,13 @@ for (const envVar of requiredEnvVars) {
 
 // Redis client
 export const redisClient = new Redis(process.env.REDIS_URL!);
-// redisClient.subscribe("transcoding", (err) => {
-//   if (err) {
-//     console.error("Failed to subscribe to Redis channel:", err);
-//     return;
-//   }
-//   console.log("Subscribed to transcoding channel");
-// });
+redisClient.subscribe("transcoding", (err) => {
+  if (err) {
+    console.error("Failed to subscribe to Redis channel:", err);
+    return;
+  }
+  console.log("Subscribed to transcoding channel");
+});
 
 
 // SQS Queue client

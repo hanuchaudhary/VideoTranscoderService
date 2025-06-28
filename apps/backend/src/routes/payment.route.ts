@@ -1,10 +1,14 @@
+import { CountryCode, Payment, Subscription } from "dodopayments/resources.mjs";
+import { subscription, transaction } from "@repo/database/schema";
+import { CreateNewCustomer } from "dodopayments/src/resources.js";
 import express, { Request, Response, Router } from "express";
-import DodoPayments from "dodopayments";
 import { authenticateUser } from "../config/middleware";
 import { subscriptionSchema } from "@repo/common";
-import { CreateNewCustomer } from "dodopayments/src/resources.js";
 import { Webhook } from "standardwebhooks";
-import { CountryCode, Payment, Subscription } from "dodopayments/resources.mjs";
+import { db } from "@repo/database/client";
+import DodoPayments from "dodopayments";
+import { v4 as uuid } from "uuid";
+import { eq } from "drizzle-orm";
 
 const client = new DodoPayments({
   bearerToken: process.env["DODO_PAYMENTS_API_KEY"],
@@ -102,6 +106,96 @@ paymentRouter.post(
           ? "Subscription activated"
           : "Payment received"
       );
+
+      if (!payload.data?.customer?.email) {
+        throw new Error("Missing customer email in payload");
+      }
+
+      const userEmail = payload.data.customer.email;
+
+      switch (payload.data.status) {
+        case "active":
+          await db.transaction(async (tx) => {
+            await tx.insert(subscription).values({
+              id: uuid(),
+              userId: payload.data.customer.customer_id!,
+              status: "ACTIVE",
+              startDate: new Date(),
+              endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+            });
+
+            await tx.insert(transaction).values({
+              id: uuid(),
+              userId: payload.data.customer.customer_id!,
+              amount: "4.99", // Assuming a fixed amount for simplicity
+              currency: payload.data.currency,
+              status: "ACTIVE",
+              planId: payload.data.subscription_id || "",
+              metadata: payload.data.metadata || {},
+              paymentMethod: payload.data.metadata?.payment_method || "card",
+            });
+          });
+          console.log(`Subscription activated for user: ${userEmail}`);
+          break;
+
+        case "expired":
+          await db.transaction(async (tx) => {
+            await tx
+              .update(subscription)
+              .set({ status: "EXPIRED" })
+              .where(
+                eq(subscription.userId, payload.data.customer.customer_id!)
+              );
+          });
+          console.log(`Subscription expired for user: ${userEmail}`);
+          break;
+
+        case "failed":
+          await db.insert(transaction).values({
+            id: uuid(),
+            userId: payload.data.customer.customer_id!,
+            amount: "0",
+            currency: payload.data.currency,
+            planId: payload.data.subscription_id || "",
+            status: "FAILED",
+            paymentMethod: payload.data.metadata?.payment_method || "card",
+          });
+          console.log(`Payment failed for user: ${userEmail}`);
+          break;
+
+        case "cancelled":
+          await db.transaction(async (tx) => {
+            await tx
+              .update(subscription)
+              .set({ status: "CANCELLED" })
+              .where(
+                eq(subscription.userId, payload.data.customer.customer_id!)
+              );
+          });
+          console.log(`Subscription cancelled for user: ${userEmail}`);
+          break;
+
+        case "succeeded":
+          await db.insert(transaction).values({
+            id: uuid(),
+            userId: payload.data.customer.customer_id!,
+            amount: "0",
+            currency: payload.data.currency,
+            status: "SUCCEEDED",
+            planId: payload.data.subscription_id || "",
+            metadata: payload.data.metadata || {},
+            paymentMethod: payload.data.metadata?.payment_method || "card",
+          });
+          console.log(`Payment succeeded for user: ${userEmail}`);
+          break;
+
+        default:
+          console.log(
+            `Unhandled status: ${payload.data.status} for user: ${userEmail}`
+          );
+          break;
+      }
 
       res.status(200).json({ received: true });
     } catch (error) {

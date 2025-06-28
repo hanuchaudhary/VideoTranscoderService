@@ -7,8 +7,7 @@ import { RunTaskCommand } from "@aws-sdk/client-ecs";
 import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import redis from "ioredis";
-import { ecsClient, sqsClient } from "./config/config";
+import { ecsClient, redisClient, sqsClient } from "./config/config";
 import { userRouter } from "./routes/user.route";
 import { transcodingRouter } from "./routes/transcoding.route";
 import { db } from "@repo/database/client";
@@ -43,82 +42,80 @@ app.use("/api/v1/user", userRouter);
 app.use("/api/v1/transcoding", transcodingRouter);
 app.use("/api/v1/payment", paymentRouter);
 
-// Redis client
-// const redisClient = new redis(process.env.REDIS_URL!);
-// redisClient.subscribe("transcoding", (err) => {
-//   if (err) {
-//     console.error("Failed to subscribe to Redis channel:", err);
-//     return;
-//   }
-//   console.log("Subscribed to transcoding channel");
-// });
+redisClient.subscribe("transcoding", (err) => {
+  if (err) {
+    console.error("Failed to subscribe to Redis channel:", err);
+    return;
+  }
+  console.log("Subscribed to transcoding channel");
+});
 
-// redisClient.on("message", async (channel, message) => {
-//   console.log(`Received message from channel ${channel}:`, message);
+redisClient.on("message", async (channel, message) => {
+  console.log(`Received message from channel ${channel}:`, message);
 
-//   const parsedMessage = JSON.parse(message);
-//   const { videoId, status, logMessage, logLevel, outputKeys, duration } =
-//     parsedMessage;
+  const parsedMessage = JSON.parse(message);
+  const { videoId, status, logMessage, logLevel, outputKeys, duration } =
+    parsedMessage;
 
-//   console.log("Parsed", parsedMessage);
+  console.log("Parsed", parsedMessage);
 
-//   await db.insert(jobLogs).values({
-//     id: uuid(),
-//     jobId: videoId,
-//     logMessage,
-//     logLevel,
-//     createdAt: new Date(),
-//   });
+  await db.insert(jobLogs).values({
+    id: uuid(),
+    jobId: videoId,
+    logMessage,
+    logLevel,
+    createdAt: new Date(),
+  });
 
-//   if (status === "STARTED") {
-//     await db
-//       .update(transcodingJobs)
-//       .set({
-//         status: "PROCESSING",
-//       })
-//       .where(eq(transcodingJobs.id, videoId));
-//   }
-//   if (status === "COMPLETED") {
-//     await db
-//       .update(transcodingJobs)
-//       .set({
-//         status: "COMPLETED",
-//         outputS3Keys: outputKeys,
-//         completeDuration: duration,
-//         updatedAt: new Date(),
-//       })
-//       .where(eq(transcodingJobs.id, videoId));
-//   }
-//   io.to(`job:${videoId}`).emit("log", parsedMessage);
-//   console.log("Log emitted to WebSocket clients for videoId:", videoId);
-// });
+  if (status === "STARTED") {
+    await db
+      .update(transcodingJobs)
+      .set({
+        status: "PROCESSING",
+      })
+      .where(eq(transcodingJobs.id, videoId));
+  }
+  if (status === "COMPLETED") {
+    await db
+      .update(transcodingJobs)
+      .set({
+        status: "COMPLETED",
+        outputS3Keys: outputKeys,
+        completeDuration: duration,
+        updatedAt: new Date(),
+      })
+      .where(eq(transcodingJobs.id, videoId));
+  }
+  io.to(`job:${videoId}`).emit("log", parsedMessage);
+  console.log("Log emitted to WebSocket clients for videoId:", videoId);
+});
 
-// io.on("connection", (socket) => {
-//   console.log("New WebSocket connection:", socket.id);
-//   socket.on("SubscribeToJob", (jobId) => {
-//     if (!jobId) {
-//       console.error("No jobId provided for subscription");
-//       return;
-//     }
-//     console.log(
-//       `Socket ${socket.id} subscribed to job: ${JSON.stringify(jobId)}`
-//     );
-//     socket.join(`job:${jobId}`);
-//   });
+io.on("connection", (socket) => {
+  console.log("New WebSocket connection:", socket.id);
+  socket.on("SubscribeToJob", (jobId) => {
+    if (!jobId) {
+      console.error("No jobId provided for subscription");
+      return;
+    }
+    console.log(
+      `Socket ${socket.id} subscribed to job: ${JSON.stringify(jobId)}`
+    );
+    socket.join(`job:${jobId}`);
+  });
 
-//   socket.on("UnsubscribeFromJob", (jobId) => {
-//     if (!jobId) {
-//       console.error("No jobId provided for unsubscription");
-//       return;
-//     }
-//     console.log(`Socket ${socket.id} unsubscribed from job: ${jobId}`);
-//     socket.leave(`job:${jobId}`);
-//   });
+  socket.on("UnsubscribeFromJob", (jobId) => {
+    if (!jobId) {
+      console.error("No jobId provided for unsubscription");
+      return;
+    }
+    console.log(`Socket ${socket.id} unsubscribed from job: ${jobId}`);
+    socket.leave(`job:${jobId}`);
+  });
 
-//   socket.on("disconnect", () => {
-//     console.log("WebSocket disconnected:", socket.id);
-//   });
-// });
+  socket.on("disconnect", () => {
+    console.log("WebSocket disconnected:", socket.id);
+  });
+});
 
 // SQS Polling
 const pollForMessages = async () => {

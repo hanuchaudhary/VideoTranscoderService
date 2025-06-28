@@ -25,6 +25,15 @@ export const jobStatusEnum = pgEnum("JobStatus", [
   "CANCELED",
 ]);
 
+export const paymentStatusEnum = pgEnum("PaymentStatus", [
+  "ACTIVE",
+  "PENDING",
+  "EXPIRED",
+  "FAILED",
+  "CANCELLED",
+  "SUCCEEDED",
+]);
+
 export const logLevelEnum = pgEnum("LogLevel", ["INFO", "WARN", "ERROR"]);
 
 const timestamps = {
@@ -105,6 +114,36 @@ export const jobLogs = pgTable("job_logs", {
   createdAt: timestamp().defaultNow(),
 });
 
+// Payment Table
+export const transaction = pgTable("transaction", {
+  id: text().primaryKey(),
+  userId: text()
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  amount: varchar().notNull(),
+  currency: varchar().notNull(),
+  status: paymentStatusEnum().notNull(),
+  paymentMethod: text().notNull(),
+  planId: text()
+    .notNull()
+    .references(() => subscription.id),
+  metadata: json(),
+  ...timestamps,
+});
+
+// Subscription Table
+export const subscription = pgTable("subscription", {
+  id: text().primaryKey(),
+  userId: text()
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  status: paymentStatusEnum().notNull(),
+  startDate: timestamp().notNull(),
+  endDate: timestamp().notNull(),
+  nextBillingDate: timestamp().notNull(),
+});
+
+
 // Export schema for Better Auth
 export const schema = {
   user,
@@ -112,4 +151,7 @@ export const schema = {
   account,
   transcodingJobs,
   jobLogs,
+  transaction,
+  subscription,
+  pricingPlanEnum,
 };
