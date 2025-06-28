@@ -1,7 +1,10 @@
+"use client";
+
 import { Check } from "lucide-react";
 import React from "react";
-import { Button } from "../ui/button";
-import { IconArrowRight } from "@tabler/icons-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { SubscriptionDialog } from "../SubscriptionButton";
 
 interface Plan {
   title: string;
@@ -14,6 +17,9 @@ interface Plan {
 }
 
 export function PricingSection() {
+  const router = useRouter();
+  const pathname = usePathname();
+
   const pricingPlans: Plan[] = [
     {
       title: "Free",
@@ -125,12 +131,16 @@ export function PricingSection() {
                 </div>
               ))}
             </div>
-            <button
-              className={`mt-auto py-4 border-t w-full font-semibold gap-4 flex items-center cursor-pointer justify-center leading-none ${index === 1 ? "bg-blue-600 hover:bg-blue-500 text-white" : "hover:bg-secondary/30"}`}
-            >
-              <span>{plan.buttonText}</span>
-              <IconArrowRight />
-            </button>
+            {pathname === "/pricing" ? (
+              <SubscriptionDialog index={index} />
+            ) : (
+              <Link
+                href="/pricing"
+                className={`mt-auto py-5 border-t w-full font-semibold gap-4 flex items-center cursor-pointer justify-center leading-none ${index === 1 ? "bg-blue-600 hover:bg-blue-500 text-white" : "hover:bg-secondary/30"}`}
+              >
+                <span>{plan.buttonText}</span>
+              </Link>
+            )}
           </div>
         ))}
       </div>

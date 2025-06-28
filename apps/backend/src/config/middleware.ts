@@ -14,7 +14,7 @@ export const authenticateUser = async (req: Request, res: Response, next: NextFu
             return;
         }
 
-        req.user = session.user;
+        req.user = session.user
         req.session = session.session;
 
         next();
