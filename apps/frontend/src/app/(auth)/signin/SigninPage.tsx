@@ -48,8 +48,8 @@ export default function SignInPage() {
     try {
       const { data, error } = await authClient.signIn.email(
         {
-          email: values.email, // user email
-          password: values.password, // user password
+          email: values.email, 
+          password: values.password, 
         },
         {
           onError: (error) => {
@@ -59,7 +59,7 @@ export default function SignInPage() {
           onSuccess: (data) => {
             console.log("Sign In Success:", data);
             toast.success("Signed in successfully");
-            router.push("/dashboard"); // Redirect to dashboard on success
+            router.push("/dashboard"); 
           },
           onRequest: () => {
             toast.loading("Creating account...");

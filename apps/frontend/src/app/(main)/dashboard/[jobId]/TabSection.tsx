@@ -23,7 +23,7 @@ interface Mergelogs extends JobLog {
 export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
   const { setSingleTranscodingJob } = useRouteStore();
   const [activeTab, setActiveTab] = React.useState<"logs" | "export">("logs");
-  const messagesEndRef = React.useRef<HTMLDivElement>(null);
+  const scrollAreaRef = React.useRef<HTMLDivElement>(null);
   const [socketLogs, setSocketLogs] = React.useState<Mergelogs[]>(
     singleTranscodingJob.logs || []
   );
@@ -59,11 +59,16 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
   }
 
   React.useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-    });
-  }, [socketLogs]);
+    if (activeTab === "logs" && scrollAreaRef.current) {
+      // Scroll to bottom of the scroll area only, not the entire page
+      const scrollElement = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
+    }
+  }, [socketLogs, activeTab]);
 
   // Initialize WebSocket connection
   React.useEffect(() => {
@@ -169,7 +174,10 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
           Export
         </button>
       </div>
-      <ScrollArea className="p-4 h-96 bg-secondary/30 backdrop-blur-sm">
+      <ScrollArea
+        ref={scrollAreaRef}
+        className="p-4 h-96 bg-secondary/30 backdrop-blur-sm"
+      >
         <div className="space-y-2">
           {activeTab === "logs" && (
             <div className="space-y-2 flex flex-col font-mono text-sm">
@@ -186,20 +194,28 @@ export const TabSection = (singleTranscodingJob: singleTranscodingJobState) => {
                       [{log.logLevel.toUpperCase()}]{" "}
                     </span>
                     <span className="text-muted-foreground">
-                      {new Date(log.createdAt).toLocaleString("en-US", {
-                        month: "2-digit",
-                        day: "2-digit",
-                        year: "2-digit",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: true,
-                      })}
+                      {log.createdAt
+                        ? new Date(log.createdAt).toLocaleString("en-US", {
+                            month: "2-digit",
+                            day: "2-digit",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                        : new Date().toLocaleString("en-US", {
+                            month: "2-digit",
+                            day: "2-digit",
+                            year: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
                     </span>{" "}
                     - {log.logMessage}
                   </span>
                 ))
               )}
-              <div ref={messagesEndRef} />
             </div>
           )}
           {activeTab === "export" && (

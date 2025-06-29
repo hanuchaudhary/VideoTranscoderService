@@ -19,6 +19,7 @@ import {
 import { authClient } from "@/lib/authClient";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -35,6 +36,7 @@ const formSchema = z.object({
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const router = useRouter()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -60,7 +62,8 @@ export default function RegisterPage() {
           },
           onSuccess: (ctx) => {
             toast.dismiss();
-            toast.success("Account created successfully! Please sign in.");
+            toast.success("Account created successfully! Redirecting to dashboard...");
+            router.push("/dashboard")
           },
           onError: (ctx) => {
             toast.dismiss();

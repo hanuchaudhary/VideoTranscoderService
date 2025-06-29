@@ -7,7 +7,8 @@ export async function middleware(request: NextRequest) {
     headers: await headers(),
   });
 
-  if (!session && request.nextUrl.pathname.startsWith("/dashboard")) {
+  console.log("Middleware session:", session);
+  if (!session?.user.id && request.nextUrl.pathname.startsWith("/dashboard")) {
     return NextResponse.redirect(new URL("/signin", request.url));
   }
   if (
@@ -24,6 +25,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   runtime: "nodejs",
   matcher: [
+    "/upload",
     "/dashboard/:path*",
     "/upload",
     "/signin",
